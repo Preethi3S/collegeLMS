@@ -232,18 +232,65 @@ exports.getDetailedCourseAnalytics = async (req, res) => {
             return res.status(403).json({ message: 'Forbidden: Admin only' });
         }
 
+        // Fetch course to get total modules/levels for calculations
+        const course = await Course.findById(courseId).select('levels').lean();
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
         const progresses = await Progress.find({ course: courseId })
             .populate('student', 'firstName lastName email rollNumber department')
             .lean();
 
-        res.json({
-            analytics: progresses.map((p) => ({
+        // Helper to calculate progress for each student
+        const detailedAnalytics = progresses.map((p) => {
+            
+            // Calculate Level and Module Progress details
+            const levelsProgress = course.levels.map(courseLvl => {
+                const studentLvl = p.levels.find(pl => String(pl.levelId) === String(courseLvl._id));
+                const totalModulesInLevel = courseLvl.modules.length;
+                
+                let completedModulesInLevel = 0;
+                let moduleProgress = [];
+
+                if (studentLvl) {
+                    completedModulesInLevel = studentLvl.moduleProgress.filter(m => m.completed).length;
+                    
+                    // Map modules in this level to their individual progress
+                    moduleProgress = courseLvl.modules.map(courseMod => {
+                        const studentMod = studentLvl.moduleProgress.find(pm => String(pm.moduleId) === String(courseMod._id));
+                        return {
+                            moduleId: courseMod._id,
+                            moduleTitle: courseMod.title,
+                            percentWatched: studentMod?.percentWatched || 0,
+                            completed: studentMod?.completed || false,
+                        };
+                    });
+                }
+                
+                const levelOverallProgress = totalModulesInLevel > 0 ? Math.round((completedModulesInLevel / totalModulesInLevel) * 100) : 0;
+                
+                return {
+                    levelId: courseLvl._id,
+                    levelTitle: courseLvl.title,
+                    progress: levelOverallProgress, // 0-100% completion of modules in this level
+                    completed: completedModulesInLevel === totalModulesInLevel,
+                    moduleProgress: moduleProgress, // Detailed module data
+                };
+            });
+
+
+            return {
                 student: p.student,
                 overallProgress: p.overallProgress,
                 totalWatchTime: p.totalWatchTime,
                 completionDuration: p.completionDuration,
                 lastAccessedAt: p.lastAccessedAt,
-            })),
+                // NEW fields
+                levelsProgress: levelsProgress, 
+            };
+        });
+
+        res.json({
+            analytics: detailedAnalytics, // Return the enhanced array
         });
     } catch (err) {
         console.error('Error getting analytics:', err);

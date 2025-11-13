@@ -153,8 +153,11 @@ exports.getCourses = async (req, res) => {
         // ✅ Students see only allowed/global courses
         const filter = {
             $or: [
+                // Allowed by Year
                 { allowedYears: { $in: [user.year] } },
+                // Allowed by Student
                 { allowedStudents: { $in: [userObjectId] } },
+                // Truly Global (no restrictions defined)
                 {
                     $and: [
                         { $or: [{ allowedYears: { $exists: false } }, { allowedYears: { $size: 0 } }] },
@@ -190,6 +193,7 @@ exports.getCourse = async (req, res) => {
         if (user.role === 'admin') {
             course = await Course.findById(courseId).lean();
         } else {
+            // Student access logic: Year OR Student OR Global
             course = await Course.findOne({
                 _id: courseId,
                 $or: [
