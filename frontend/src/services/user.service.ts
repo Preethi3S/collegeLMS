@@ -1,0 +1,43 @@
+import api from './api';
+
+export const getMyProfile = async () => {
+  const res = await api.get('/users/me');
+  return res.data.user;
+};
+
+export const updateProfile = async (formData: FormData) => {
+  const res = await api.put('/users/me', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return res.data.user;
+};
+
+export const listStudents = async () => {
+  const res = await api.get('/users/students');
+  return res.data.students;
+};
+
+export const uploadStudents = async (formData: FormData) => {
+  const res = await api.post('/users/students/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data;
+};
+
+export const deleteStudent = async (id: string) => {
+  const res = await api.delete(`/users/students/${id}`);
+  return res.data;
+};
+
+export const getStudent = async (id: string) => {
+  const res = await api.get(`/users/students/${id}`);
+  return res.data.student;
+};
+
+export const updateStudent = async (id: string, formData: FormData) => {
+  const res = await api.put(`/users/students/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data.student;
+};
+
+export const createStudent = async (payload: Record<string, any>) => {
+  const res = await api.post('/users/students/create', payload);
+  return res.data.user;
+};

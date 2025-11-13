@@ -1,0 +1,19 @@
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/user.controller');
+const { auth, adminOnly } = require('../middleware/auth.middleware');
+const upload = require('../middleware/upload.middleware');
+
+// 🧑‍🎓 Authenticated user routes
+router.get('/me', auth, userController.getProfile);
+router.put('/me', auth, userController.updateProfile);
+
+// 🧠 Admin-only routes
+router.get('/students', auth, adminOnly, userController.listStudents);
+router.post('/students/create', auth, adminOnly, userController.createStudent);
+router.post('/students/upload', auth, adminOnly, upload.single('file'), userController.uploadStudents);
+router.get('/students/:id', auth, adminOnly, userController.getStudent);
+router.put('/students/:id', auth, adminOnly, userController.updateStudent);
+router.delete('/students/:id', auth, adminOnly, userController.deleteStudent);
+
+module.exports = router;
