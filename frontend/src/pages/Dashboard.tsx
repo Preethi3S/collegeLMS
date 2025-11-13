@@ -1,133 +1,71 @@
 import CourseCard from '@/components/CourseCard';
 import useAuthStore from '@/context/auth.store';
-import { getCourses, getEnrolledCourses } from '@/services/course.service';
+import { getCourses } from '@/services/course.service';
 import { getProgress } from '@/services/progress.service';
+import { getEnrolledCourses } from '@/services/course.service'; 
 import {
-  Container,
-  Grid,
-  Typography,
-  Box,
-  LinearProgress,
-  Paper,
-  CircularProgress,
+    Container,
+    Grid,
+    Typography,
+    Box,
+    LinearProgress,
+    Paper,
+    CircularProgress,
+    Divider,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
 
+// NOTE: EnrolledCoursePaper component is now removed as it's not used.
+
 const Dashboard: React.FC = () => {
-  const { user } = useAuthStore();
-  const { data: availableCourses, isLoading: loadingAvailable } = useQuery(
-    ['availableCourses'],
-    () => getCourses(true)
-  );
-  const { data: enrolledCourses, isLoading: loadingEnrolled } = useQuery(
-    ['enrolledCourses'],
-    () => getEnrolledCourses()
-  );
+    const { user } = useAuthStore();
+    
+    // Fetch courses available to the student (using the backend filtering logic)
+    const { data: availableCourses, isLoading: loadingAvailable } = useQuery(
+        ['availableCourses'],
+        () => getCourses(true)
+    );
+    
+    // NOTE: Removed the useQuery for enrolledCourses and the useEffect for progressMap.
 
-  const [progressMap, setProgressMap] = useState<Record<string, any>>({});
+    if (loadingAvailable)
+        return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 5 }} />;
 
-  useEffect(() => {
-    const fetchProgressData = async () => {
-      if (!enrolledCourses) return;
-      const results = await Promise.all(
-        enrolledCourses.map(async (course: any) => {
-          try {
-            const { progress } = await getProgress(course._id || course.id);
-            return { id: course._id || course.id, progress };
-          } catch {
-            return { id: course._id || course.id, progress: null };
-          }
-        })
-      );
-      const map: Record<string, any> = {};
-      for (const r of results) map[r.id] = r.progress;
-      setProgressMap(map);
-    };
-    fetchProgressData();
-  }, [enrolledCourses]);
 
-  if (loadingAvailable || loadingEnrolled)
-    return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 5 }} />;
+    return (
+        <Container sx={{ py: 3 }}>
+            <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>
+                Welcome Back{user?.firstName ? `, ${user.firstName}` : ''}! 👋
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                Ready to continue your learning journey? Explore the courses available to you below.
+            </Typography>
 
-  return (
-    <Container sx={{ py: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Welcome{user ? `, ${user.firstName}` : ''}
-      </Typography>
-
-      {/* Enrolled Courses Section */}
-      <Typography variant="h6" sx={{ mt: 3 }}>
-        Your Courses
-      </Typography>
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        {enrolledCourses?.length ? (
-          enrolledCourses.map((course: any) => {
-            const progress = progressMap[course._id || course.id];
-            return (
-              <Grid item xs={12} md={6} key={course._id || course.id}>
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 3,
-                    boxShadow: 1,
-                    background: 'white',
-                  }}
-                >
-                  <Typography variant="h6" fontWeight={600}>
-                    {course.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Instructor: {course.instructor?.firstName} {course.instructor?.lastName}
-                  </Typography>
-
-                  <LinearProgress
-                    variant="determinate"
-                    value={progress?.overallProgress || 0}
-                    sx={{
-                      height: 8,
-                      borderRadius: 5,
-                      bgcolor: '#E5E7EB',
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: '#10B981',
-                      },
-                    }}
-                  />
-                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-                    Overall Progress: {Math.round(progress?.overallProgress || 0)}%
-                  </Typography>
-
-                  {progress?.totalWatchTime !== undefined && (
-                    <Typography variant="caption" color="text.secondary">
-                      Watch Time: {Math.round(progress.totalWatchTime / 60)} mins
-                    </Typography>
-                  )}
-                </Paper>
-              </Grid>
-            );
-          })
-        ) : (
-          <Typography sx={{ mt: 1 }}>You are not enrolled in any courses.</Typography>
-        )}
-      </Grid>
-
-      {/* Available Courses Section */}
-      <Typography variant="h6" sx={{ mt: 4 }}>
-        Available Courses
-      </Typography>
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        {availableCourses?.length ? (
-          availableCourses.map((c: any) => (
-            <Grid item xs={12} md={6} key={c._id || c.id}>
-              <CourseCard course={{ ...c, id: c._id || c.id }} />
+            {/* --- Courses Available for Your Year (Primary Dashboard Content) --- */}
+            <Typography variant="h5" fontWeight={600} sx={{ mt: 4, mb: 2, color: 'text.primary' }}>
+                ✨ Courses Available for Your Year
+            </Typography>
+            <Grid container spacing={3}>
+                {availableCourses?.length ? (
+                    availableCourses.map((c: any) => (
+                        <Grid item xs={12} md={6} lg={4} key={c._id || c.id}>
+                            <CourseCard 
+                                course={{ ...c, id: c._id || c.id, instructor: undefined }} 
+                                // Enrollment button remains hidden on Dashboard as no onEnroll prop is passed
+                            />
+                        </Grid>
+                    ))
+                ) : (
+                    <Box sx={{ p: 3, ml: 2 }}>
+                        <Typography color="text.secondary">
+                            No courses are currently available for your specified year or student group.
+                        </Typography>
+                    </Box>
+                )}
             </Grid>
-          ))
-        ) : (
-          <Typography sx={{ mt: 1 }}>No courses available for your year.</Typography>
-        )}
-      </Grid>
-    </Container>
-  );
+        </Container>
+    );
 };
 
 export default Dashboard;
