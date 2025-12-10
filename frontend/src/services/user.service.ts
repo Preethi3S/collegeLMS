@@ -41,3 +41,13 @@ export const createStudent = async (payload: Record<string, any>) => {
   const res = await api.post('/users/students/create', payload);
   return res.data.user;
 };
+
+export const getDashboard = async () => {
+  const res = await api.get('/users/dashboard');
+  return res.data;
+};
+
+export const deleteStudentsBulk = async (formData: FormData) => {
+  const res = await api.post('/users/students/delete-bulk', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data;
+};

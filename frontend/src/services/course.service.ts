@@ -16,6 +16,18 @@ export const getCourse = async (id: string) => {
   return res.data; // { course, progress? }
 };
 
+// ✅ Create a new course (admin)
+export const createCourse = async (courseData: any) => {
+  const res = await api.post('/courses', courseData);
+  return res.data;
+};
+
+// ✅ Update existing course (admin)
+export const updateCourse = async (courseId: string, courseData: any) => {
+  const res = await api.put(`/courses/${courseId}`, courseData);
+  return res.data;
+};
+
 // ✅ Enroll in a course (student or admin-enroll)
 export const enroll = async (courseId: string, studentId?: string) => {
   const res = await api.post(`/courses/${courseId}/enroll`, studentId ? { studentId } : {});

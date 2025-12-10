@@ -26,6 +26,7 @@ const userRoutes = require('./routes/user.routes');
 const courseRoutes = require('./routes/course.routes');
 const messageRoutes = require('./routes/message.routes');
 const progressRoutes = require('./routes/progress.routes');
+const presenceRoutes = require('./routes/presence.routes');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -33,6 +34,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/presence', presenceRoutes);
 
 const PORT = config.port || 5000;
 

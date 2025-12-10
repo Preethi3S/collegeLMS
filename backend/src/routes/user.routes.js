@@ -7,11 +7,13 @@ const upload = require('../middleware/upload.middleware');
 // 🧑‍🎓 Authenticated user routes
 router.get('/me', auth, userController.getProfile);
 router.put('/me', auth, userController.updateProfile);
+router.get('/dashboard', auth, userController.getDashboard);
 
 // 🧠 Admin-only routes
 router.get('/students', auth, adminOnly, userController.listStudents);
 router.post('/students/create', auth, adminOnly, userController.createStudent);
 router.post('/students/upload', auth, adminOnly, upload.single('file'), userController.uploadStudents);
+router.post('/students/delete-bulk', auth, adminOnly, upload.single('file'), userController.deleteStudents);
 router.get('/students/:id', auth, adminOnly, userController.getStudent);
 router.put('/students/:id', auth, adminOnly, userController.updateStudent);
 router.delete('/students/:id', auth, adminOnly, userController.deleteStudent);

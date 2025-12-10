@@ -1,5 +1,5 @@
 import { getMyProfile, updateProfile } from '@/services/user.service';
-import { Avatar, Box, Button, Container, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, Chip, Container, Divider, Grid, LinearProgress, Paper, TextField, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
 
@@ -80,47 +80,110 @@ const Profile: React.FC = () => {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h5">Profile</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-          <Avatar src={user?.profileImage} sx={{ width: 80, height: 80 }} />
-          <div>
-            <Typography>{user?.firstName} {user?.lastName}</Typography>
-            <Typography variant="caption">{user?.email}</Typography>
-          </div>
-        </Box>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>Profile</Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar src={user?.profileImage} sx={{ width: 96, height: 96 }} />
+              <Box>
+                <Typography variant="h6">{user?.firstName} {user?.lastName}</Typography>
+                <Typography variant="body2" color="text.secondary">{user?.email}</Typography>
+                <Box sx={{ mt: 1 }}>
+                  <Chip label={user?.department || 'Department'} size="small" sx={{ mr: 1 }} />
+                  <Chip label={user?.year ? `Year ${user.year}` : 'Year'} size="small" />
+                </Box>
+              </Box>
+            </Box>
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-          <TextField fullWidth label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Email" value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2 }} />
+            <Divider sx={{ my: 2 }} />
 
-          <TextField fullWidth label="Roll number" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Year" type="number" inputProps={{ min: 1, max: 4 }} value={year} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : '')} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Age" type="number" value={age} onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Date of birth" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} />
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="caption" color="text.secondary">Academic Progress</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                  <LinearProgress variant="determinate" value={user?.cgpa ? Math.min((Number(user.cgpa) / 10) * 100, 100) : 0} />
+                </Box>
+                <Typography variant="body2" sx={{ minWidth: 46 }}>{user?.cgpa || 'N/A'}</Typography>
+              </Box>
+            </Box>
 
-          <Box sx={{ mt: 1 }}>Profile image: <input type="file" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} /></Box>
-          <Box sx={{ mt: 1 }}>Resume (PDF/DOC): <input type="file" onChange={(e) => setResumeFile(e.target.files ? e.target.files[0] : null)} /></Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="caption" color="text.secondary">Quick Info</Typography>
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="body2"><strong>Roll:</strong> {user?.rollNumber || '—'}</Typography>
+                <Typography variant="body2"><strong>Age:</strong> {user?.age || '—'}</Typography>
+                <Typography variant="body2"><strong>CGPA:</strong> {user?.cgpa || '—'}</Typography>
+              </Box>
+            </Box>
 
-          <TextField fullWidth label="CGPA" type="number" value={cgpa} onChange={(e) => setCgpa(e.target.value ? Number(e.target.value) : '')} sx={{ mb: 2 }} />
-          <TextField fullWidth label="12th %" type="number" value={percentage12} onChange={(e) => setPercentage12(e.target.value ? Number(e.target.value) : '')} sx={{ mb: 2 }} />
-          <TextField fullWidth label="10th %" type="number" value={percentage10} onChange={(e) => setPercentage10(e.target.value ? Number(e.target.value) : '')} sx={{ mb: 2 }} />
+            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+              <Button variant="contained" size="small">Message</Button>
+              <Button variant="outlined" size="small" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Edit</Button>
+            </Box>
+          </Paper>
+        </Grid>
 
-          <Box sx={{ mb: 2 }}>
-            <label><input type="checkbox" checked={hasArrears} onChange={(e) => setHasArrears(e.target.checked)} /> Has arrears</label>
-          </Box>
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={1}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Edit Profile</Typography>
 
-          <TextField fullWidth label="Skills (comma separated)" value={skills} onChange={(e) => setSkills(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Coding platform link" value={codingPlatformLink} onChange={(e) => setCodingPlatformLink(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Github link" value={githubLink} onChange={(e) => setGithubLink(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="LinkedIn link" value={linkedinLink} onChange={(e) => setLinkedinLink(e.target.value)} sx={{ mb: 2 }} />
+            <Box component="form" onSubmit={handleSubmit}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                </Grid>
 
-          <Button type="submit" variant="contained" sx={{ mt: 2 }}>Save</Button>
-        </Box>
-      </Box>
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="Roll number" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField fullWidth label="Year" type="number" inputProps={{ min: 1, max: 4 }} value={year} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : '')} />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField fullWidth label="Age" type="number" value={age} onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')} />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="CGPA" type="number" value={cgpa} onChange={(e) => setCgpa(e.target.value ? Number(e.target.value) : '')} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="12th %" type="number" value={percentage12} onChange={(e) => setPercentage12(e.target.value ? Number(e.target.value) : '')} />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Skills (comma separated)" value={skills} onChange={(e) => setSkills(e.target.value)} />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="Github link" value={githubLink} onChange={(e) => setGithubLink(e.target.value)} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField fullWidth label="LinkedIn link" value={linkedinLink} onChange={(e) => setLinkedinLink(e.target.value)} />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button type="submit" variant="contained">Save changes</Button>
+                    <Button variant="outlined" onClick={() => window.location.reload()}>Discard</Button>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
     </Container>
   );
 };

@@ -3,6 +3,8 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 const { parseExcelFile } = require('../utils/excel');
 const fs = require('fs');
 const path = require('path');
+const Progress = require('../models/progress.model');
+const Course = require('../models/course.model');
 
 exports.getProfile = async (req, res) => {
     res.json({ user: req.user });
@@ -139,7 +141,42 @@ exports.deleteStudent = async (req, res) => {
     }
 };
 
-// Admin: create a single student
+// Admin: bulk delete students from Excel/CSV
+exports.deleteStudents = async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+        const rows = parseExcelFile(req.file.path);
+        let deleted = 0;
+        const failed = [];
+
+        for (const row of rows) {
+            const identifier = (row.email || row.Email || row.rollNumber || row.rollnumber || '').toString().trim();
+            if (!identifier) {
+                failed.push({ row, reason: 'No email or roll number' });
+                continue;
+            }
+
+            try {
+                const result = await User.findOneAndDelete({
+                    $or: [{ email: identifier }, { rollNumber: identifier }],
+                    role: 'student'
+                });
+                if (result) deleted++;
+                else failed.push({ row, reason: 'Student not found' });
+            } catch (e) {
+                failed.push({ row, reason: e.message });
+            }
+        }
+
+        try { fs.unlinkSync(req.file.path); } catch (e) { }
+
+        res.json({ deletedCount: deleted, failed });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 exports.createStudent = async (req, res) => {
     try {
         const { username, email, password, firstName, lastName, year, rollNumber, department } = req.body;
@@ -152,6 +189,67 @@ exports.createStudent = async (req, res) => {
         const user = new User({ username, email, password, role: 'student', firstName: firstName || '', lastName: lastName || '', year: year || 1, rollNumber: rollNumber || '', department: department || '' });
         await user.save();
         res.status(201).json({ user: { ...user.toObject(), password: undefined } });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Student dashboard data for authenticated user
+exports.getDashboard = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+
+        // Get progress entries and populate course info
+        const progresses = await Progress.find({ student: studentId }).populate('course').lean();
+
+        // Calculate hours spent (seconds -> hours), lessons count, courses count
+        let totalSeconds = 0;
+        let lessonsCount = 0;
+        const courses = [];
+
+        for (const p of progresses) {
+            totalSeconds += p.totalWatchTime || 0;
+            if (p.course) {
+                // count modules
+                const levels = p.course.levels || [];
+                for (const lvl of levels) {
+                    lessonsCount += (lvl.modules || []).length;
+                }
+                courses.push({
+                    id: p.course._id,
+                    title: p.course.title,
+                    thumbnail: p.course.thumbnail,
+                    progress: p.overallProgress || 0,
+                });
+            }
+        }
+
+        // If user has enrolledCourses directly on their user doc, include those not in progresses
+        const user = await User.findById(studentId).lean();
+        const enrolled = user?.enrolledCourses || [];
+        if (enrolled.length) {
+            const missing = await Course.find({ _id: { $in: enrolled.filter((id) => !courses.find(c => String(c.id) === String(id))) } }).lean();
+            for (const c of missing) {
+                let mcount = 0;
+                for (const lvl of (c.levels || [])) mcount += (lvl.modules || []).length;
+                lessonsCount += mcount;
+                courses.push({ id: c._id, title: c.title, thumbnail: c.thumbnail, progress: 0 });
+            }
+        }
+
+        const hours = Math.round((totalSeconds / 3600) * 10) / 10; // 1 decimal hour
+
+        res.json({
+            stats: {
+                lessons: lessonsCount,
+                assignments: 0,
+                tests: 0,
+                hours: hours,
+                coursesCount: courses.length,
+            },
+            courses,
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });

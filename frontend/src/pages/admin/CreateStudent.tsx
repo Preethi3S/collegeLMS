@@ -1,18 +1,27 @@
 import { createStudent } from '@/services/user.service';
 import {
-  Box,
-  Button,
-  Container,
-  TextField,
-  Typography,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
 } from '@mui/material';
 import React, { useState } from 'react';
 
-const CreateStudent: React.FC = () => {
+interface CreateStudentModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+const CreateStudentModal: React.FC<CreateStudentModalProps> = ({ open, onClose, onSuccess }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,11 +31,15 @@ const CreateStudent: React.FC = () => {
   const [rollNumber, setRollNumber] = useState('');
   const [department, setDepartment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !email || !password)
-      return alert('Username, email and password are required');
+    setError('');
+    if (!username || !email || !password) {
+      setError('Username, email and password are required');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -40,7 +53,8 @@ const CreateStudent: React.FC = () => {
         rollNumber,
         department,
       });
-      alert('Student created successfully!');
+      
+      // Reset form
       setUsername('');
       setEmail('');
       setPassword('');
@@ -49,8 +63,11 @@ const CreateStudent: React.FC = () => {
       setYear('');
       setRollNumber('');
       setDepartment('');
+      
+      onSuccess && onSuccess();
+      onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error creating student');
+      setError(err.response?.data?.message || 'Error creating student');
     } finally {
       setLoading(false);
     }
@@ -72,26 +89,30 @@ const CreateStudent: React.FC = () => {
   ];
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Create Student
-        </Typography>
-
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Create New Student</DialogTitle>
+      <DialogContent>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {error && (
+            <Box sx={{ p: 2, bgcolor: 'error.light', borderRadius: 1, color: 'error.dark' }}>
+              {error}
+            </Box>
+          )}
+          
           <TextField
             fullWidth
             label="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            sx={{ mb: 2 }}
+            disabled={loading}
           />
           <TextField
             fullWidth
             label="Email"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            sx={{ mb: 2 }}
+            disabled={loading}
           />
           <TextField
             fullWidth
@@ -99,25 +120,24 @@ const CreateStudent: React.FC = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            sx={{ mb: 2 }}
+            disabled={loading}
           />
           <TextField
             fullWidth
-            label="First name"
+            label="First Name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            sx={{ mb: 2 }}
+            disabled={loading}
           />
           <TextField
             fullWidth
-            label="Last name"
+            label="Last Name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            sx={{ mb: 2 }}
+            disabled={loading}
           />
 
-          {/* Year Dropdown */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
+          <FormControl fullWidth disabled={loading}>
             <InputLabel>Year</InputLabel>
             <Select
               value={year}
@@ -134,14 +154,13 @@ const CreateStudent: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Roll number"
+            label="Roll Number"
             value={rollNumber}
             onChange={(e) => setRollNumber(e.target.value)}
-            sx={{ mb: 2 }}
+            disabled={loading}
           />
 
-          {/* Department Dropdown */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
+          <FormControl fullWidth disabled={loading}>
             <InputLabel>Department</InputLabel>
             <Select
               value={department}
@@ -155,19 +174,21 @@ const CreateStudent: React.FC = () => {
               ))}
             </Select>
           </FormControl>
-
-          <Button
-            variant="contained"
-            type="submit"
-            disabled={loading}
-            fullWidth
-          >
-            {loading ? 'Creating...' : 'Create Student'}
-          </Button>
         </Box>
-      </Box>
-    </Container>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button 
+          variant="contained" 
+          onClick={handleSubmit} 
+          disabled={loading}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Create Student'}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
-export default CreateStudent;
+export default CreateStudentModal;
+

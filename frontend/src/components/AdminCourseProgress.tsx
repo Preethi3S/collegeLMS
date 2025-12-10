@@ -1,19 +1,19 @@
+import api from '@/services/api';
+import { getCourse } from '@/services/course.service';
+import {
+    Box,
+    CircularProgress,
+    LinearProgress,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  CircularProgress,
-} from '@mui/material';
-import { getCourse } from '@/services/course.service';
-import api from '@/services/api';
 
 interface StudentAnalytics {
   student: {
@@ -28,8 +28,9 @@ interface StudentAnalytics {
   lastAccessedAt: string;
 }
 
-const AdminCourseProgress: React.FC = () => {
-  const { id: courseId } = useParams<{ id: string }>();
+const AdminCourseProgress: React.FC<{ courseId?: string }> = ({ courseId: propCourseId }) => {
+  const { id: routeCourseId } = useParams<{ id: string }>();
+  const courseId = propCourseId || routeCourseId;
   const [course, setCourse] = useState<any>(null);
   const [analytics, setAnalytics] = useState<StudentAnalytics[]>([]);
   const [loading, setLoading] = useState(true);

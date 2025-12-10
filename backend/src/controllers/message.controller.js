@@ -48,3 +48,61 @@ exports.markAsRead = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+// Get unread message count
+exports.getUnreadCount = async (req, res) => {
+    try {
+        const count = await Message.countDocuments({ receiver: req.user._id, read: false });
+        res.json({ unreadCount: count });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Send message to multiple recipients (by year, department, email, rollno, or individual)
+exports.sendBulkMessage = async (req, res) => {
+    try {
+        const User = require('../models/user.model');
+        const { subject, content, filterType, filterValue } = req.body;
+
+        if (!subject || !content) return res.status(400).json({ message: 'Subject and content required' });
+
+        let recipients = [];
+
+        if (filterType === 'email') {
+            const user = await User.findOne({ email: filterValue });
+            if (user) recipients = [user._id];
+        } else if (filterType === 'rollno') {
+            const user = await User.findOne({ rollNumber: filterValue });
+            if (user) recipients = [user._id];
+        } else if (filterType === 'year') {
+            const users = await User.find({ role: 'student', year: parseInt(filterValue) });
+            recipients = users.map(u => u._id);
+        } else if (filterType === 'department') {
+            const users = await User.find({ role: 'student', department: filterValue });
+            recipients = users.map(u => u._id);
+        } else if (filterType === 'year-department') {
+            const [year, dept] = filterValue.split('|');
+            const users = await User.find({ role: 'student', year: parseInt(year), department: dept });
+            recipients = users.map(u => u._id);
+        }
+
+        const messages = recipients.map(rid => ({
+            sender: req.user._id,
+            receiver: rid,
+            subject,
+            content,
+            read: false
+        }));
+
+        if (messages.length > 0) {
+            await Message.insertMany(messages);
+        }
+
+        res.json({ message: `Message sent to ${messages.length} recipient(s)` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};

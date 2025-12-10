@@ -237,7 +237,7 @@ exports.getDetailedCourseAnalytics = async (req, res) => {
         if (!course) return res.status(404).json({ message: 'Course not found' });
 
         const progresses = await Progress.find({ course: courseId })
-            .populate('student', 'firstName lastName email rollNumber department')
+            .populate('student', 'firstName lastName email rollNumber department year')
             .lean();
 
         // Helper to calculate progress for each student
