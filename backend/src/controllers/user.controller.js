@@ -53,47 +53,101 @@ exports.listStudents = async (req, res) => {
 
 // Admin: bulk upload students from Excel/CSV
 exports.uploadStudents = async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-
-        const rows = parseExcelFile(req.file.path);
-        const created = [];
-        const skipped = [];
-
-        for (const row of rows) {
-            const username = (row.username || row.Username || '').toString().trim();
-            const email = (row.email || row.Email || '').toString().trim();
-            const password = (row.password || row.Password || '').toString().trim();
-
-            if (!username || !email || !password) {
-                skipped.push({ row, reason: 'Missing required field' });
-                continue;
-            }
-
-            const exists = await User.findOne({ $or: [{ username }, { email }] });
-            if (exists) {
-                skipped.push({ row, reason: 'User exists' });
-                continue;
-            }
-
-            const names = username.split(/\.|_|-|\s+/).map(s => s.trim()).filter(Boolean);
-            const firstName = names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : 'Student';
-            const lastName = names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : '';
-
-            const user = new User({ username, email, password, role: 'student', firstName, lastName, year: 1 });
-            await user.save();
-            created.push({ username, email });
-        }
-
-        // remove uploaded file
-        try { fs.unlinkSync(req.file.path); } catch (e) { }
-
-        res.json({ createdCount: created.length, skipped });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
+
+    const rows = parseExcelFile(req.file.path);
+
+    const created = [];
+    const skipped = [];
+
+    for (const row of rows) {
+      // Normalize fields from Excel
+      const username = String(row.username || row.Username || '').trim();
+      const email = String(row.email || row.Email || '').trim();
+      const password = String(row.password || row.Password || '').trim();
+
+      const firstName = String(
+        row.firstName || row.firstname || row.FirstName || ''
+      ).trim();
+
+      const lastName = String(
+        row.lastName || row.lastname || row.LastName || ''
+      ).trim();
+
+      const rollNumber = String(
+        row.rollNumber ||
+          row['roll number'] ||
+          row.RollNumber ||
+          ''
+      ).trim();
+
+      const department = String(
+        row.department || row.Department || ''
+      ).trim();
+
+      const year = Number(row.year || row.Year);
+
+      // Validation
+      if (!username || !email || !password || !year) {
+        skipped.push({
+          row,
+          reason: 'Missing required fields (username/email/password/year)',
+        });
+        continue;
+      }
+
+      if (isNaN(year) || year < 1 || year > 4) {
+        skipped.push({ row, reason: 'Invalid year (must be 1–4)' });
+        continue;
+      }
+
+      // Check duplicate user
+      const exists = await User.findOne({
+        $or: [{ username }, { email }],
+      });
+
+      if (exists) {
+        skipped.push({ row, reason: 'User already exists' });
+        continue;
+      }
+
+      // Create student
+      const user = new User({
+        username,
+        email,
+        password,
+        role: 'student',
+        firstName: firstName || 'Student',
+        lastName: lastName || '',
+        year,
+        rollNumber,
+        department,
+      });
+
+      await user.save();
+
+      created.push({ username, email });
+    }
+
+    // Cleanup uploaded file
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {}
+
+    res.json({
+      createdCount: created.length,
+      skippedCount: skipped.length,
+      skipped,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
+
 
 // Admin: get student by id
 exports.getStudent = async (req, res) => {
