@@ -1,201 +1,323 @@
-import CourseCard from '@/components/CourseCard';
-import useAuthStore from '@/context/auth.store';
-import api from '@/services/api';
-import { getDashboard } from '@/services/user.service';
+import BookIcon from "@mui/icons-material/Book";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import {
-    Avatar,
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    Container,
-    Grid,
-    Stack,
-    Tooltip,
-    Typography,
-} from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import React, { useEffect } from 'react';
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Grid,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import React, { useEffect } from "react";
+
+import CourseCard from "@/components/CourseCard";
+import useAuthStore from "@/context/auth.store";
+import api from "@/services/api";
+import { getDashboard } from "@/services/user.service";
 
 const Dashboard: React.FC = () => {
-    const { user } = useAuthStore();
-    
-    // Fetch dynamic dashboard data from backend
-    const { data: dashboardData, isLoading: loadingDashboard } = useQuery(
-        ['dashboard'],
-        () => getDashboard()
-    );
-    
-    // Fetch presence calendar data
-    const { data: presenceData, isLoading: loadingPresence } = useQuery(
-        ['presence'],
-        async () => {
-            const res = await api.get('/presence?days=30');
-            return res.data.records || [];
-        }
-    );
+  const { user } = useAuthStore();
 
-    // Send heartbeat every 30 seconds while on dashboard
-    useEffect(() => {
-        const heartbeat = setInterval(async () => {
-            try {
-                await api.post('/presence/heartbeat', { seconds: 30 });
-            } catch (err) {
-                console.error('Heartbeat failed:', err);
-            }
-        }, 30000);
+  const { data: dashboardData } = useQuery(["dashboard"], () => getDashboard());
 
-        return () => clearInterval(heartbeat);
-    }, []);
+  const { data: presenceData = [] } = useQuery(["presence"], async () => {
+    const res = await api.get("/presence?days=30");
+    return res.data.records || [];
+  });
 
-    const isLoading = loadingDashboard || loadingPresence;
-    if (isLoading)
-        return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 5 }} />;
+  useEffect(() => {
+    const id = setInterval(() => {
+      api.post("/presence/heartbeat", { seconds: 30 }).catch(() => {});
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
 
-    const stats = dashboardData?.stats || { lessons: 0, assignments: 0, tests: 0, hours: 0, coursesCount: 0 };
-    const courses = dashboardData?.courses || [];
-    const presenceMap: Record<string, number> = {};
-    presenceData?.forEach((p: any) => {
-        presenceMap[p.date] = p.seconds;
-    });
+  const stats = dashboardData?.stats || {};
+  const courses = dashboardData?.courses || [];
 
-    // Generate calendar grid for last 30 days
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
-    const calendarDays = [];
-    for (let i = 0; i < 30; i++) {
-        const d = new Date(thirtyDaysAgo);
-        d.setDate(d.getDate() + i);
-        const dateStr = d.toISOString().slice(0, 10);
-        calendarDays.push({ date: dateStr, seconds: presenceMap[dateStr] || 0 });
-    }
+  const today = new Date();
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const monthDays = [...Array(monthEnd.getDate()).keys()].map((n) => n + 1);
 
-    const getPresenceColor = (seconds: number) => {
-        if (seconds === 0) return '#f0f0f0';
-        if (seconds < 600) return '#b3e5fc'; // 10 min
-        if (seconds < 1800) return '#81d4fa'; // 30 min
-        if (seconds < 3600) return '#4fc3f7'; // 1 hour
-        return '#0288d1'; // 1+ hour
-    };
+  const presenceMap: Record<string, number> = {};
+  presenceData.forEach((p: any) => {
+    presenceMap[p.date.slice(0, 10)] = p.seconds;
+  });
 
-    return (
-        <Container maxWidth="lg" sx={{ py: 3 }}>
-            <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>
-                Welcome Back{user?.firstName ? `, ${user.firstName}` : ''}! 👋
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                Ready to continue your learning journey? Explore the courses available to you below.
-            </Typography>
+  const activeDays = new Set(
+    Object.keys(presenceMap)
+      .map((d) => new Date(d))
+      .filter((d) => d.getMonth() === today.getMonth())
+      .map((d) => d.getDate())
+  );
 
-            {/* --- Top Status Cards (Dynamic) --- */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={1} sx={{ borderRadius: 3 }}>
-                        <CardContent>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                <div>
-                                    <Typography variant="caption" color="text.secondary">Lessons</Typography>
-                                    <Typography variant="h5" fontWeight={700}>{stats.lessons}</Typography>
-                                </div>
-                                <Avatar sx={{ bgcolor: 'primary.main' }}>L</Avatar>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </Grid>
+  const getPresenceColor = (seconds: number) => {
+    if (!seconds) return "#E8F5E9";
+    if (seconds < 600) return "#C8E6C9";
+    if (seconds < 1800) return "#A5D6A7";
+    if (seconds < 3600) return "#81C784";
+    return "#00897B";
+  };
 
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={1} sx={{ borderRadius: 3 }}>
-                        <CardContent>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                <div>
-                                    <Typography variant="caption" color="text.secondary">Assignments</Typography>
-                                    <Typography variant="h5" fontWeight={700}>{stats.assignments}</Typography>
-                                </div>
-                                <Avatar sx={{ bgcolor: 'secondary.main' }}>A</Avatar>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </Grid>
+  return (
+    <Container maxWidth="lg" sx={{ py: 1, px: 1 }}>
+      <Box sx={{ py: 0 }}>
+        {/* Welcome Section */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#0D47A1", mb: 1 }}>
+            👋 Welcome back, {user?.firstName}!
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#666" }}>
+            Here's your learning progress and courses
+          </Typography>
+        </Box>
 
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={1} sx={{ borderRadius: 3 }}>
-                        <CardContent>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                <div>
-                                    <Typography variant="caption" color="text.secondary">Tests</Typography>
-                                    <Typography variant="h5" fontWeight={700}>{stats.tests}</Typography>
-                                </div>
-                                <Avatar sx={{ bgcolor: '#10b981' }}>T</Avatar>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={1} sx={{ borderRadius: 3 }}>
-                        <CardContent>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                <div>
-                                    <Typography variant="caption" color="text.secondary">Hours Spent</Typography>
-                                    <Typography variant="h5" fontWeight={700}>{stats.hours}h</Typography>
-                                </div>
-                                <Avatar sx={{ bgcolor: '#f59e0b' }}>H</Avatar>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </Grid>
-            </Grid>
-
-            {/* --- Presence Calendar (Last 30 Days) --- */}
-            <Card sx={{ p: 3, borderRadius: 3, mb: 4 }} elevation={1}>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>📅 Activity Calendar (Last 30 Days)</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(30px, 1fr))', gap: 1 }}>
-                    {calendarDays.map((day) => (
-                        <Tooltip 
-                            key={day.date} 
-                            title={`${day.date}: ${Math.round(day.seconds / 60)} mins`}
-                            arrow
-                        >
-                            <Box
-                                sx={{
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: 1,
-                                    bgcolor: getPresenceColor(day.seconds),
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s',
-                                    '&:hover': { transform: 'scale(1.15)' }
-                                }}
-                            />
-                        </Tooltip>
-                    ))}
+        {/* Stats Cards */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          {/* Enrolled Courses */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                background: "linear-gradient(135deg, #0D47A1 0%, #1565C0 100%)",
+                color: "#fff",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(13, 71, 161, 0.2)",
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      Enrolled Courses
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                      {stats.enrolledCourses || 0}
+                    </Typography>
+                  </Box>
+                  <BookIcon sx={{ fontSize: 50, opacity: 0.2 }} />
                 </Box>
+              </CardContent>
             </Card>
+          </Grid>
 
-            {/* --- Courses Available for Your Year --- */}
-            <Typography variant="h5" fontWeight={600} sx={{ mt: 2, mb: 2, color: 'text.primary' }}>
-                ✨ Courses Available for Your Year
-            </Typography>
-            <Grid container spacing={3}>
-                {courses.length ? (
-                    courses.map((c: any) => (
-                        <Grid item xs={12} md={6} lg={4} key={c.id}>
-                            <CourseCard 
-                                course={{ ...c, instructor: undefined }} 
-                            />
-                        </Grid>
-                    ))
-                ) : (
-                    <Box sx={{ p: 3, ml: 2 }}>
-                        <Typography color="text.secondary">
-                            No courses are currently available for your specified year or student group.
-                        </Typography>
-                    </Box>
-                )}
-            </Grid>
-        </Container>
-    );
+          {/* Overall Progress */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                background: "linear-gradient(135deg, #00897B 0%, #00BCD4 100%)",
+                color: "#fff",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(0, 137, 123, 0.2)",
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      Overall Progress
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                      {Math.round(stats.overallProgress || 0)}%
+                    </Typography>
+                  </Box>
+                  <TrendingUpIcon sx={{ fontSize: 50, opacity: 0.2 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Rank */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                background: "linear-gradient(135deg, #FF9800 0%, #FFC107 100%)",
+                color: "#fff",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(255, 152, 0, 0.2)",
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      Department Rank
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                      {stats.rank ? `#${stats.rank}` : 'N/A'}
+                    </Typography>
+                  </Box>
+                  <WorkspacePremiumIcon sx={{ fontSize: 50, opacity: 0.2 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Completed */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                background: "linear-gradient(135deg, #D32F2F 0%, #F44336 100%)",
+                color: "#fff",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(211, 47, 47, 0.2)",
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      Completed
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                      {stats.completedCourses || 0}
+                    </Typography>
+                  </Box>
+                  <EmojiEventsIcon sx={{ fontSize: 50, opacity: 0.2 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={2}>
+          {/* Left: Courses */}
+          <Grid item xs={12} lg={8}>
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: "#0D47A1" }}>
+                    📚 Your Courses
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
+                    {courses.length} course{courses.length !== 1 ? "s" : ""} available
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  sx={{
+                    background: "linear-gradient(135deg, #0D47A1 0%, #00897B 100%)",
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
+                  onClick={() => (window.location.href = "/courses")}
+                >
+                  View All
+                </Button>
+              </Box>
+
+              {courses.length > 0 ? (
+                <Grid container spacing={2}>
+                  {courses.slice(0, 3).map((course: any) => (
+                    <Grid item xs={12} sm={6} key={course._id}>
+                      <CourseCard course={course} />
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Card sx={{ textAlign: "center", py: 8, borderRadius: 2 }}>
+                  <Typography variant="h6" sx={{ color: "#999" }}>
+                    No courses enrolled yet
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    sx={{ mt: 2, background: "linear-gradient(135deg, #0D47A1 0%, #00897B 100%)" }}
+                    onClick={() => (window.location.href = "/courses")}
+                  >
+                    Explore Courses
+                  </Button>
+                </Card>
+              )}
+            </Box>
+          </Grid>
+
+          {/* Right: Activity */}
+          <Grid item xs={12} lg={4}>
+            <Stack spacing={2}>
+              {/* Calendar */}
+              <Card sx={{ borderRadius: 2 }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                    📅 This Month
+                  </Typography>
+
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1 }}>
+                    {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
+                      <Typography key={d} textAlign="center" variant="caption" sx={{ fontWeight: 600, color: "#666" }}>
+                        {d}
+                      </Typography>
+                    ))}
+
+                    {[...Array(monthStart.getDay())].map((_, i) => (
+                      <Box key={`blank-${i}`} />
+                    ))}
+
+                    {monthDays.map((d) => {
+                      const isActive = activeDays.has(d);
+                      return (
+                        <Tooltip key={d} title={`${d}th`}>
+                          <Box
+                            sx={{
+                              height: 35,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 1,
+                              bgcolor: isActive ? "#00897B" : "#EEE",
+                              color: isActive ? "#fff" : "#999",
+                              fontWeight: isActive ? 700 : 500,
+                              cursor: "pointer",
+                              fontSize: "0.85rem",
+                              transition: "all 0.2s",
+                              "&:hover": { transform: "scale(1.1)" },
+                            }}
+                          >
+                            {d}
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
+                </CardContent>
+              </Card>
+
+              {/* Activity Heatmap */}
+              <Card sx={{ borderRadius: 2 }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                    🔥 Activity (Last 30 Days)
+                  </Typography>
+
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 0.8 }}>
+                    {presenceData.map((p: any) => (
+                      <Tooltip key={p.date} title={`${p.date}: ${Math.round(p.seconds / 60)} mins`}>
+                        <Box
+                          sx={{
+                            height: 32,
+                            borderRadius: 1,
+                            bgcolor: getPresenceColor(p.seconds),
+                            cursor: "pointer",
+                            transition: "transform 0.2s",
+                            "&:hover": { transform: "scale(1.1)" },
+                          }}
+                        />
+                      </Tooltip>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Stack>
+          </Grid>
+        </Grid>
+      </Box>
+    </Container>
+  );
 };
 
 export default Dashboard;

@@ -56,6 +56,8 @@ exports.recordWatchSession = async (req, res) => {
                     moduleId: m._id,
                     totalWatched: 0,
                     percentWatched: 0,
+                    videoCompleted: false,
+                    codingCompleted: false,
                     completed: false,
                     watchSessions: [],
                 })),
@@ -83,9 +85,27 @@ exports.recordWatchSession = async (req, res) => {
         modProg.lastWatchedAt = new Date();
         modProg.resumeAt = resumeAt || 0;
 
-        if (percentWatched >= 90 && !modProg.completed) {
-            modProg.completed = true;
-            modProg.completedAt = new Date();
+        // Check if video is completed (90% watched)
+        if (percentWatched >= 90 && !modProg.videoCompleted) {
+            modProg.videoCompleted = true;
+        }
+
+        // Check if module should be marked as completed
+        const module = course.levels.flatMap(lvl => lvl.modules).find(m => String(m._id) === String(moduleId));
+        const hasCodingQuestions = module && module.codingQuestions && module.codingQuestions.length > 0;
+        
+        if (hasCodingQuestions) {
+            // For modules with coding questions, require both video and coding completion
+            if (modProg.videoCompleted && modProg.codingCompleted && !modProg.completed) {
+                modProg.completed = true;
+                modProg.completedAt = new Date();
+            }
+        } else {
+            // For modules without coding questions, video completion is enough
+            if (modProg.videoCompleted && !modProg.completed) {
+                modProg.completed = true;
+                modProg.completedAt = new Date();
+            }
         }
 
         lvl.completed = lvl.moduleProgress.every((m) => m.completed);
@@ -187,16 +207,37 @@ exports.markModuleComplete = async (req, res) => {
             progress = new Progress({ student: studentId, course: courseId, startedAt: new Date() });
             progress.levels = course.levels.map((lvl) => ({
                 levelId: lvl._id,
-                moduleProgress: lvl.modules.map((m) => ({ moduleId: m._id })),
+                moduleProgress: lvl.modules.map((m) => ({ 
+                    moduleId: m._id,
+                    videoCompleted: false,
+                    codingCompleted: false,
+                    completed: false
+                })),
             }));
         }
 
         for (const lvl of progress.levels) {
             for (const mod of lvl.moduleProgress) {
                 if (String(mod.moduleId) === String(moduleId)) {
-                    mod.completed = true;
-                    mod.percentWatched = 100;
-                    mod.completedAt = new Date();
+                    mod.codingCompleted = true;
+                    
+                    // Check if module should be marked as completed
+                    const module = course.levels.flatMap(lvl => lvl.modules).find(m => String(m._id) === String(moduleId));
+                    const hasCodingQuestions = module && module.codingQuestions && module.codingQuestions.length > 0;
+                    
+                    if (hasCodingQuestions) {
+                        // For modules with coding questions, require both video and coding completion
+                        if (mod.videoCompleted && mod.codingCompleted && !mod.completed) {
+                            mod.completed = true;
+                            mod.completedAt = new Date();
+                        }
+                    } else {
+                        // For modules without coding questions, coding completion alone is enough (though this shouldn't happen)
+                        if (mod.codingCompleted && !mod.completed) {
+                            mod.completed = true;
+                            mod.completedAt = new Date();
+                        }
+                    }
                 }
             }
         }

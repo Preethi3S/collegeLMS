@@ -1,11 +1,12 @@
 import { getMyProfile, updateProfile } from '@/services/user.service';
-import { Avatar, Box, Button, Chip, Container, Divider, Grid, LinearProgress, Paper, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, CardContent, Divider, Grid, TextField, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
 
 const Profile: React.FC = () => {
   const queryClient = useQueryClient();
   const { data: user, isLoading } = useQuery(['me'], getMyProfile);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,17 +14,11 @@ const Profile: React.FC = () => {
   const [rollNumber, setRollNumber] = useState('');
   const [year, setYear] = useState<number | ''>('');
   const [department, setDepartment] = useState('');
-  const [age, setAge] = useState<number | ''>('');
-  const [dateOfBirth, setDateOfBirth] = useState<string>('');
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [cgpa, setCgpa] = useState<number | ''>('');
-  const [percentage12, setPercentage12] = useState<number | ''>('');
-  const [percentage10, setPercentage10] = useState<number | ''>('');
-  const [hasArrears, setHasArrears] = useState(false);
-  const [skills, setSkills] = useState('');
-  const [codingPlatformLink, setCodingPlatformLink] = useState('');
-  const [githubLink, setGithubLink] = useState('');
   const [linkedinLink, setLinkedinLink] = useState('');
+  const [githubLink, setGithubLink] = useState('');
+  const [leetcodeLink, setLeetcodeLink] = useState('');
+  const [skills, setSkills] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -33,158 +28,292 @@ const Profile: React.FC = () => {
       setRollNumber(user.rollNumber || '');
       setYear(user.year || '');
       setDepartment(user.department || '');
-      setAge(user.age || '');
-      setDateOfBirth(user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().slice(0,10) : '');
       setCgpa(user.cgpa || '');
-      setPercentage12(user.percentage12 || '');
-      setPercentage10(user.percentage10 || '');
-      setHasArrears(user.hasArrears || false);
-      setSkills((user.skills && user.skills.join ? user.skills.join(', ') : user.skills) || '');
-      setCodingPlatformLink(user.codingPlatformLink || '');
-      setGithubLink(user.githubLink || '');
       setLinkedinLink(user.linkedinLink || '');
+      setGithubLink(user.githubLink || '');
+      setLeetcodeLink(user.leetcodeLink || '');
+      setSkills(
+        user.skills && Array.isArray(user.skills)
+          ? user.skills.join(', ')
+          : user.skills || ''
+      );
     }
   }, [user]);
 
   const mutation = useMutation((fd: FormData) => updateProfile(fd), {
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['me']);
-      alert('Profile updated');
+      alert('Profile updated successfully');
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const fd = new FormData();
+
     fd.append('firstName', firstName);
     fd.append('lastName', lastName);
     fd.append('email', email);
     if (file) fd.append('file', file);
-    if (resumeFile) fd.append('resume', resumeFile);
     fd.append('rollNumber', rollNumber);
     if (year) fd.append('year', String(year));
     fd.append('department', department);
-    if (age) fd.append('age', String(age));
-    if (dateOfBirth) fd.append('dateOfBirth', dateOfBirth);
     if (cgpa) fd.append('cgpa', String(cgpa));
-    if (percentage12) fd.append('percentage12', String(percentage12));
-    if (percentage10) fd.append('percentage10', String(percentage10));
-    fd.append('hasArrears', String(hasArrears));
-    fd.append('skills', JSON.stringify(skills.split(',').map(s => s.trim()).filter(Boolean)));
-    fd.append('codingPlatformLink', codingPlatformLink);
-    fd.append('githubLink', githubLink);
     fd.append('linkedinLink', linkedinLink);
+    fd.append('githubLink', githubLink);
+    fd.append('leetcodeLink', leetcodeLink);
+    fd.append(
+      'skills',
+      JSON.stringify(
+        skills.split(',').map((s) => s.trim()).filter(Boolean)
+      )
+    );
+
     mutation.mutate(fd);
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading)
+    return (
+      <Typography sx={{ color: '#6B7280' }}>Loading profile...</Typography>
+    );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>Profile</Typography>
-      <Grid container spacing={3}>
+    <Box>
+      {/* HEADER */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h2" sx={{ fontWeight: 600, color: '#1A1A1A' }}>
+          Profile
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#6B7280' }}>
+          Manage your personal information and credentials
+        </Typography>
+      </Box>
+
+      <Grid container spacing={2}>
+        {/* PROFILE PICTURE */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={1}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar src={user?.profileImage} sx={{ width: 96, height: 96 }} />
-              <Box>
-                <Typography variant="h6">{user?.firstName} {user?.lastName}</Typography>
-                <Typography variant="body2" color="text.secondary">{user?.email}</Typography>
-                <Box sx={{ mt: 1 }}>
-                  <Chip label={user?.department || 'Department'} size="small" sx={{ mr: 1 }} />
-                  <Chip label={user?.year ? `Year ${user.year}` : 'Year'} size="small" />
-                </Box>
-              </Box>
-            </Box>
+          <Card
+            sx={{
+              borderRadius: '4px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+              border: '1px solid #E0E0E0'
+            }}
+          >
+            <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+              <Avatar
+                src={user?.profileImage}
+                sx={{
+                  width: 120,
+                  height: 120,
+                  mx: 'auto',
+                  mb: 2,
+                  bgcolor: '#1B5E8E',
+                  fontSize: '3rem'
+                }}
+              >
+                {firstName.charAt(0)}
+                {lastName.charAt(0)}
+              </Avatar>
 
-            <Divider sx={{ my: 2 }} />
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                {firstName} {lastName}
+              </Typography>
 
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="caption" color="text.secondary">Academic Progress</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
-                <Box sx={{ flex: 1 }}>
-                  <LinearProgress variant="determinate" value={user?.cgpa ? Math.min((Number(user.cgpa) / 10) * 100, 100) : 0} />
-                </Box>
-                <Typography variant="body2" sx={{ minWidth: 46 }}>{user?.cgpa || 'N/A'}</Typography>
-              </Box>
-            </Box>
+              <Typography variant="body2" sx={{ color: '#6B7280', mb: 2 }}>
+                {rollNumber || 'Roll Number'}
+              </Typography>
 
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="caption" color="text.secondary">Quick Info</Typography>
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="body2"><strong>Roll:</strong> {user?.rollNumber || '—'}</Typography>
-                <Typography variant="body2"><strong>Age:</strong> {user?.age || '—'}</Typography>
-                <Typography variant="body2"><strong>CGPA:</strong> {user?.cgpa || '—'}</Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-              <Button variant="contained" size="small">Message</Button>
-              <Button variant="outlined" size="small" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Edit</Button>
-            </Box>
-          </Paper>
+              <Button
+                variant="outlined"
+                size="small"
+                component="label"
+                fullWidth
+                sx={{
+                  borderColor: '#1B5E8E',
+                  color: '#1B5E8E',
+                  '&:hover': {
+                    borderColor: '#0D47A1',
+                    backgroundColor: '#F0F5FA'
+                  }
+                }}
+              >
+                Change Photo
+                <input
+                  hidden
+                  accept="image/*"
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
+              </Button>
+            </CardContent>
+          </Card>
         </Grid>
 
+        {/* FORM SECTION */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={1}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Edit Profile</Typography>
+          <Card
+            sx={{
+              borderRadius: '4px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+              border: '1px solid #E0E0E0'
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <form onSubmit={handleSubmit}>
+                {/* BASIC INFO */}
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                  Basic Information
+                </Typography>
 
-            <Box component="form" onSubmit={handleSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="First Name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Last Name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Roll Number"
+                      value={rollNumber}
+                      onChange={(e) => setRollNumber(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Department"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                    />
+                  </Grid>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Roll number" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} />
+                <Divider sx={{ my: 2 }} />
+
+                {/* ACADEMIC */}
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                  Academic Details
+                </Typography>
+
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Year"
+                      type="number"
+                      value={year}
+                      onChange={(e) =>
+                        setYear(e.target.value ? parseInt(e.target.value) : '')
+                      }
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="CGPA"
+                      type="number"
+                      value={cgpa}
+                      onChange={(e) =>
+                        setCgpa(e.target.value ? parseFloat(e.target.value) : '')
+                      }
+                    />
+                  </Grid>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
-                </Grid>
-                <Grid item xs={12} sm={3}>
-                  <TextField fullWidth label="Year" type="number" inputProps={{ min: 1, max: 4 }} value={year} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : '')} />
-                </Grid>
-                <Grid item xs={12} sm={3}>
-                  <TextField fullWidth label="Age" type="number" value={age} onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')} />
+                <Divider sx={{ my: 2 }} />
+
+                {/* LINKS */}
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                  Professional Links
+                </Typography>
+
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="LinkedIn"
+                      value={linkedinLink}
+                      onChange={(e) => setLinkedinLink(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="GitHub"
+                      value={githubLink}
+                      onChange={(e) => setGithubLink(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="LeetCode"
+                      value={leetcodeLink}
+                      onChange={(e) => setLeetcodeLink(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Skills (comma separated)"
+                      value={skills}
+                      onChange={(e) => setSkills(e.target.value)}
+                    />
+                  </Grid>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="CGPA" type="number" value={cgpa} onChange={(e) => setCgpa(e.target.value ? Number(e.target.value) : '')} />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="12th %" type="number" value={percentage12} onChange={(e) => setPercentage12(e.target.value ? Number(e.target.value) : '')} />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField fullWidth label="Skills (comma separated)" value={skills} onChange={(e) => setSkills(e.target.value)} />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Github link" value={githubLink} onChange={(e) => setGithubLink(e.target.value)} />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="LinkedIn link" value={linkedinLink} onChange={(e) => setLinkedinLink(e.target.value)} />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button type="submit" variant="contained">Save changes</Button>
-                    <Button variant="outlined" onClick={() => window.location.reload()}>Discard</Button>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          </Paper>
+                {/* SAVE BUTTON */}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  disabled={mutation.isLoading}
+                  sx={{
+                    backgroundColor: '#1B5E8E',
+                    color: '#fff',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': { backgroundColor: '#0D47A1' }
+                  }}
+                >
+                  {mutation.isLoading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
-    </Container>
+    </Box>
   );
 };
 

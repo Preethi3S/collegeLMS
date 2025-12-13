@@ -12,6 +12,8 @@ const moduleProgressSchema = new mongoose.Schema({
   moduleId: { type: mongoose.Schema.Types.ObjectId, required: true },
   totalWatched: { type: Number, default: 0 }, // total seconds
   percentWatched: { type: Number, default: 0 },
+  videoCompleted: { type: Boolean, default: false },
+  codingCompleted: { type: Boolean, default: false },
   completed: { type: Boolean, default: false },
   completedAt: { type: Date },
   firstWatchedAt: { type: Date },

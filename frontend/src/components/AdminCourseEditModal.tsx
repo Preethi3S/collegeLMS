@@ -28,15 +28,24 @@ import { getCourse, updateCourse } from '../services/course.service';
 
 interface Level {
   title: string;
-  modules: Array<{ title: string; videoUrl: string }>;
+  modules: Array<{ 
+    title: string;
+    description?: string;
+    content: string; // YouTube URL
+    codingQuestions?: Array<{ title: string; url: string }>; // Multiple coding questions
+    videoLength?: number;
+    type?: string;
+    order?: number;
+    resources?: any[];
+  }>;
 }
 
 interface Course {
   _id: string;
   title: string;
   description: string;
-  instructor: string;
-  department: string;
+  instructor?: string;
+  department?: string;
   allowedYears: string[];
   levels: Level[];
   thumbnail?: string;
@@ -68,10 +77,13 @@ export const AdminCourseEditModal: React.FC<Props> = ({ open, courseId, onClose,
     try {
       setLoading(true);
       const data = await getCourse(courseId!);
-      setFormData(data);
+      // Extract course from response
+      const courseData = data.course || data;
+      setFormData(courseData);
       setError('');
     } catch (err: any) {
       setError(err.message || 'Failed to fetch course');
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -125,7 +137,16 @@ export const AdminCourseEditModal: React.FC<Props> = ({ open, courseId, onClose,
     setFormData(prev => {
       if (!prev) return null;
       const levels = [...prev.levels];
-      levels[levelIndex].modules.push({ title: 'New Module', videoUrl: '' });
+      levels[levelIndex].modules.push({ 
+        title: 'New Module', 
+        content: '',
+        codingQuestions: [],
+        description: '',
+        type: 'video',
+        videoLength: 0,
+        order: levels[levelIndex].modules.length + 1,
+        resources: []
+      });
       return { ...prev, levels };
     });
   };
@@ -156,16 +177,83 @@ export const AdminCourseEditModal: React.FC<Props> = ({ open, courseId, onClose,
     });
   };
 
+  const handleAddCodingQuestion = (levelIndex: number, moduleIndex: number) => {
+    setFormData(prev => {
+      if (!prev) return null;
+      const levels = [...prev.levels];
+      if (!levels[levelIndex].modules[moduleIndex].codingQuestions) {
+        levels[levelIndex].modules[moduleIndex].codingQuestions = [];
+      }
+      levels[levelIndex].modules[moduleIndex].codingQuestions?.push({
+        title: 'Coding Question',
+        url: ''
+      });
+      return { ...prev, levels };
+    });
+  };
+
+  const handleRemoveCodingQuestion = (levelIndex: number, moduleIndex: number, qIndex: number) => {
+    setFormData(prev => {
+      if (!prev) return null;
+      const levels = [...prev.levels];
+      if (levels[levelIndex].modules[moduleIndex].codingQuestions) {
+        levels[levelIndex].modules[moduleIndex].codingQuestions = 
+          levels[levelIndex].modules[moduleIndex].codingQuestions!.filter((_, i) => i !== qIndex);
+      }
+      return { ...prev, levels };
+    });
+  };
+
+  const handleCodingQuestionChange = (
+    levelIndex: number,
+    moduleIndex: number,
+    qIndex: number,
+    field: string,
+    value: string
+  ) => {
+    setFormData(prev => {
+      if (!prev) return null;
+      const levels = [...prev.levels];
+      if (levels[levelIndex].modules[moduleIndex].codingQuestions) {
+        levels[levelIndex].modules[moduleIndex].codingQuestions![qIndex] = {
+          ...levels[levelIndex].modules[moduleIndex].codingQuestions![qIndex],
+          [field]: value
+        };
+      }
+      return { ...prev, levels };
+    });
+  };
+
   const handleSubmit = async () => {
     if (!formData) return;
     try {
       setLoading(true);
       setError('');
-      await updateCourse(formData._id, formData);
+      
+      // Use the data directly - modules already have 'content' field from backend
+      const courseDataForBackend = {
+        ...formData,
+        levels: formData.levels.map(level => ({
+          ...level,
+          modules: level.modules.map(module => ({
+            title: module.title,
+            description: module.description || '',
+            type: module.type || 'video',
+            content: module.content || '', // Main content (YouTube URL)
+            codingQuestions: module.codingQuestions || [], // Array of coding questions
+            videoLength: module.videoLength || 0,
+            order: module.order || 1,
+            resources: module.resources || [],
+          })),
+        })),
+      };
+      
+      await updateCourse(formData._id, courseDataForBackend);
       onUpdated();
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to update course');
+      console.error('Update error:', err);
     } finally {
       setLoading(false);
     }
@@ -306,28 +394,92 @@ export const AdminCourseEditModal: React.FC<Props> = ({ open, courseId, onClose,
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
                               {level.modules.map((module, moduleIndex) => (
-                                <Box key={moduleIndex} sx={{ display: 'flex', gap: 1 }}>
+                                <Box key={moduleIndex} sx={{ display: 'flex', flexDirection: 'column', gap: 1, p: 1.5, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#FAFBFC' }}>
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <TextField
+                                      size="small"
+                                      label="Module Title"
+                                      value={module.title}
+                                      onChange={(e) => handleModuleChange(levelIndex, moduleIndex, 'title', e.target.value)}
+                                      fullWidth
+                                    />
+                                    <IconButton
+                                      color="error"
+                                      size="small"
+                                      onClick={() => handleRemoveModule(levelIndex, moduleIndex)}
+                                    >
+                                      <DeleteIcon />
+                                    </IconButton>
+                                  </Box>
                                   <TextField
                                     size="small"
-                                    label="Module Title"
-                                    value={module.title}
-                                    onChange={(e) => handleModuleChange(levelIndex, moduleIndex, 'title', e.target.value)}
+                                    label="Video URL (YouTube)"
+                                    value={module.content}
+                                    onChange={(e) => handleModuleChange(levelIndex, moduleIndex, 'content', e.target.value)}
                                     fullWidth
+                                    placeholder="https://youtube.com/embed/..."
                                   />
                                   <TextField
                                     size="small"
-                                    label="Video URL"
-                                    value={module.videoUrl}
-                                    onChange={(e) => handleModuleChange(levelIndex, moduleIndex, 'videoUrl', e.target.value)}
+                                    label="Description"
+                                    value={module.description || ''}
+                                    onChange={(e) => handleModuleChange(levelIndex, moduleIndex, 'description', e.target.value)}
                                     fullWidth
+                                    multiline
+                                    rows={2}
                                   />
-                                  <IconButton
-                                    color="error"
-                                    size="small"
-                                    onClick={() => handleRemoveModule(levelIndex, moduleIndex)}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
+                                  
+                                  {/* Coding Questions Section */}
+                                  <Box sx={{ p: 1, bgcolor: '#E3F2FD', borderRadius: 1, border: '1px solid #90CAF9' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                      <Typography variant="body2" fontWeight={600} sx={{ color: '#0D47A1' }}>
+                                        💻 Coding Questions
+                                      </Typography>
+                                      <Button
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => handleAddCodingQuestion(levelIndex, moduleIndex)}
+                                      >
+                                        Add
+                                      </Button>
+                                    </Box>
+                                    
+                                    {module.codingQuestions && module.codingQuestions.length > 0 ? (
+                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        {module.codingQuestions.map((cq, qIndex) => (
+                                          <Box key={qIndex} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                                            <TextField
+                                              size="small"
+                                              label="Title"
+                                              value={cq.title}
+                                              onChange={(e) => handleCodingQuestionChange(levelIndex, moduleIndex, qIndex, 'title', e.target.value)}
+                                              placeholder="e.g., Two Sum"
+                                              sx={{ flex: 0.3 }}
+                                            />
+                                            <TextField
+                                              size="small"
+                                              label="URL"
+                                              value={cq.url}
+                                              onChange={(e) => handleCodingQuestionChange(levelIndex, moduleIndex, qIndex, 'url', e.target.value)}
+                                              placeholder="https://leetcode.com/problems/..."
+                                              fullWidth
+                                            />
+                                            <IconButton
+                                              color="error"
+                                              size="small"
+                                              onClick={() => handleRemoveCodingQuestion(levelIndex, moduleIndex, qIndex)}
+                                            >
+                                              <DeleteIcon />
+                                            </IconButton>
+                                          </Box>
+                                        ))}
+                                      </Box>
+                                    ) : (
+                                      <Typography variant="caption" sx={{ color: '#666', fontStyle: 'italic' }}>
+                                        No coding questions yet
+                                      </Typography>
+                                    )}
+                                  </Box>
                                 </Box>
                               ))}
                             </Box>

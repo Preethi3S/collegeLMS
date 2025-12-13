@@ -1,20 +1,28 @@
+import { getVideoProgress, markModuleComplete, markVideoProgress } from '@/services/progress.service';
+import CodeIcon from '@mui/icons-material/Code';
+import { Box, Checkbox, FormControlLabel, LinearProgress, Link, Stack, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
-import YouTube, { YouTubeProps, YouTubePlayer } from 'react-youtube';
-import { Box, LinearProgress, Typography } from '@mui/material';
-import { markVideoProgress, getVideoProgress } from '@/services/progress.service';
+import YouTube, { YouTubePlayer, YouTubeProps } from 'react-youtube';
+
+interface CodingQuestion {
+  title: string;
+  url: string;
+}
 
 interface Props {
   courseId: string;
   moduleId: string;
   content: string;
   videoLength: number;
+  codingQuestions?: CodingQuestion[];
   onComplete?: () => void;
 }
 
-const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength, onComplete }) => {
+const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength, codingQuestions, onComplete }) => {
   const [watchTime, setWatchTime] = useState(0);
   const [percentWatched, setPercentWatched] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
+  const [isManuallyCompleted, setIsManuallyCompleted] = useState(false);
 
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -129,6 +137,92 @@ const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength
           {(watchTime % 60).toString().padStart(2, '0')})
         </Typography>
       </Box>
+
+      {/* Manual Completion Checkbox */}
+      {/* Manual Completion Checkbox - show only for coding modules */}
+      {codingQuestions && codingQuestions.length > 0 && (
+        <Box sx={{ mt: 2, p: 2, bgcolor: '#F5F7FA', borderRadius: 1, border: '1px solid #E8EEF5' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isManuallyCompleted}
+                onChange={async (e) => {
+                  const checked = e.target.checked;
+                  setIsManuallyCompleted(checked);
+                  if (checked) {
+                    try {
+                      await markModuleComplete(courseId, moduleId);
+                    } catch (err) {
+                      console.error('Failed to mark module complete', err);
+                    }
+                    onComplete?.();
+                  }
+                }}
+                sx={{
+                  color: '#0D47A1',
+                  '&.Mui-checked': { color: '#00897B' },
+                }}
+              />
+            }
+            label={
+              <Box sx={{ ml: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Mark Coding Challenges Completed
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#666' }}>
+                  Check when you've solved the coding challenges for this module
+                </Typography>
+              </Box>
+            }
+          />
+        </Box>
+      )}
+
+      {/* Coding Questions Section */}
+      {codingQuestions && codingQuestions.length > 0 && (
+        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0D47A1', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CodeIcon sx={{ fontSize: 24 }} />
+            💻 Coding Challenges
+          </Typography>
+          {codingQuestions.map((cq, index) => (
+            <Box key={index} sx={{ p: 2.5, bgcolor: '#E3F2FD', borderRadius: 1, border: '2px solid #0D47A1' }}>
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0D47A1', mb: 1 }}>
+                    {index + 1}. {cq.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#333', mb: 2 }}>
+                    Solve this coding challenge to practice what you've learned:
+                  </Typography>
+                  <Link
+                    href={cq.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      display: 'inline-block',
+                      px: 2,
+                      py: 1,
+                      bgcolor: '#0D47A1',
+                      color: '#fff',
+                      textDecoration: 'none',
+                      borderRadius: 1,
+                      fontWeight: 600,
+                      transition: 'all 0.3s',
+                      '&:hover': {
+                        bgcolor: '#00897B',
+                        boxShadow: '0 4px 8px rgba(0, 137, 123, 0.3)',
+                      },
+                    }}
+                  >
+                    Solve Challenge →
+                  </Link>
+                </Box>
+              </Stack>
+            </Box>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 };

@@ -86,6 +86,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    leetcodeLink: {
+        type: String,
+        default: ''
+    },
     year: {
         type: Number,
         required: function() {

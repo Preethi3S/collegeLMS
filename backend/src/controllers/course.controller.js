@@ -46,6 +46,7 @@ exports.createCourse = async (req, res) => {
                         type: module.type || 'video',
                         content: module.content || '',
                         videoLength: module.videoLength || 0,
+                        codingQuestions: module.codingQuestions || [],
                         order: module.order || j + 1,
                         resources: module.resources || [],
                     }))
@@ -168,6 +169,15 @@ exports.getCourses = async (req, res) => {
         };
 
         const courses = await Course.find(onlyAvailable ? filter : {}).lean();
+        
+        // For students, add enrollment status
+        if (user.role === 'student') {
+            const enrolledCourseIds = user.enrolledCourses || [];
+            courses.forEach(course => {
+                course.isEnrolled = enrolledCourseIds.includes(course._id.toString());
+            });
+        }
+        
         res.json({ courses });
     } catch (error) {
         console.error('Error getting courses:', error);

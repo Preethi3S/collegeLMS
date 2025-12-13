@@ -29,3 +29,8 @@ export const markAsRead = async (id: string) => {
   const res = await api.post(`/messages/${id}/read`);
   return res.data;
 };
+
+export const getAdminId = async () => {
+  const res = await api.get('/users/admin-id');
+  return res.data.adminId;
+};

@@ -54,10 +54,10 @@ const AdminCourseProgress: React.FC<{ courseId?: string }> = ({ courseId: propCo
   }, [courseId]);
 
   if (loading)
-    return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 4 }} />;
+    return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 2 }} />;
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 1000, mx: 'auto', mt: 2 }}>
       <Typography variant="h4" gutterBottom>
         📊 {course?.title || 'Course'} — Progress Analytics
       </Typography>

@@ -203,19 +203,17 @@ exports.getDashboard = async (req, res) => {
         // Get progress entries and populate course info
         const progresses = await Progress.find({ student: studentId }).populate('course').lean();
 
-        // Calculate hours spent (seconds -> hours), lessons count, courses count
-        let totalSeconds = 0;
-        let lessonsCount = 0;
+        // Calculate stats
+        let totalWatchTime = 0;
+        let totalProgress = 0;
+        let completedCourses = 0;
         const courses = [];
 
         for (const p of progresses) {
-            totalSeconds += p.totalWatchTime || 0;
+            totalWatchTime += p.totalWatchTime || 0;
+            totalProgress += p.overallProgress || 0;
+            if ((p.overallProgress || 0) >= 100) completedCourses++;
             if (p.course) {
-                // count modules
-                const levels = p.course.levels || [];
-                for (const lvl of levels) {
-                    lessonsCount += (lvl.modules || []).length;
-                }
                 courses.push({
                     id: p.course._id,
                     title: p.course.title,
@@ -225,31 +223,56 @@ exports.getDashboard = async (req, res) => {
             }
         }
 
-        // If user has enrolledCourses directly on their user doc, include those not in progresses
+        // Get enrolled courses count
         const user = await User.findById(studentId).lean();
-        const enrolled = user?.enrolledCourses || [];
-        if (enrolled.length) {
-            const missing = await Course.find({ _id: { $in: enrolled.filter((id) => !courses.find(c => String(c.id) === String(id))) } }).lean();
-            for (const c of missing) {
-                let mcount = 0;
-                for (const lvl of (c.levels || [])) mcount += (lvl.modules || []).length;
-                lessonsCount += mcount;
-                courses.push({ id: c._id, title: c.title, thumbnail: c.thumbnail, progress: 0 });
+        const enrolledCourses = user?.enrolledCourses?.length || 0;
+
+        // Overall progress as average
+        const overallProgress = progresses.length > 0 ? Math.round(totalProgress / progresses.length) : 0;
+
+        // Calculate rank within department
+        let rank = null;
+        if (user?.department) {
+            const deptStudents = await User.find({ department: user.department, role: 'student' }).select('_id').lean();
+            const deptStudentIds = deptStudents.map(s => s._id);
+
+            // Get all progresses for dept students
+            const deptProgresses = await Progress.aggregate([
+                { $match: { student: { $in: deptStudentIds } } },
+                { $group: { _id: '$student', avgProgress: { $avg: '$overallProgress' }, completedCount: { $sum: { $cond: [{ $gte: ['$overallProgress', 100] }, 1, 0] } } } },
+                { $sort: { avgProgress: -1, completedCount: -1 } }
+            ]);
+
+            const currentStudentProgress = deptProgresses.find(p => String(p._id) === String(studentId));
+            if (currentStudentProgress) {
+                rank = deptProgresses.findIndex(p => String(p._id) === String(studentId)) + 1;
             }
         }
 
-        const hours = Math.round((totalSeconds / 3600) * 10) / 10; // 1 decimal hour
-
         res.json({
             stats: {
-                lessons: lessonsCount,
-                assignments: 0,
-                tests: 0,
-                hours: hours,
-                coursesCount: courses.length,
+                enrolledCourses,
+                overallProgress,
+                watchTime: totalWatchTime,
+                completedCourses,
+                rank,
             },
             courses,
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Get admin ID (for students to send messages to admin)
+exports.getAdminId = async (req, res) => {
+    try {
+        const admin = await User.findOne({ role: 'admin' }).select('_id');
+        if (!admin) {
+            return res.status(404).json({ message: 'No admin found' });
+        }
+        res.json({ adminId: admin._id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });

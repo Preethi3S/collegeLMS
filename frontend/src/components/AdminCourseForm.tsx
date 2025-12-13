@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Box,
-  IconButton,
-  Divider,
-  Paper,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  FormControlLabel,
-  CircularProgress,
-} from '@mui/material';
-import { AddCircle, Delete } from '@mui/icons-material';
 import api from '@/services/api';
+import { AddCircle, Delete } from '@mui/icons-material';
+import {
+    Box,
+    Button,
+    Checkbox,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    FormControl,
+    FormControlLabel,
+    IconButton,
+    InputLabel,
+    ListItemText,
+    MenuItem,
+    Paper,
+    Select,
+    TextField,
+    Typography,
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
 
 interface AdminCourseFormProps {
   open: boolean;
@@ -101,7 +101,36 @@ const AdminCourseForm: React.FC<AdminCourseFormProps> = ({
       description: '',
       content: '',
       videoLength: 0,
+      codingQuestions: [],
     });
+    setLevels(updated);
+  };
+
+  const addCodingQuestion = (levelIndex: number, moduleIndex: number) => {
+    const updated = [...levels];
+    if (!updated[levelIndex].modules[moduleIndex].codingQuestions) {
+      updated[levelIndex].modules[moduleIndex].codingQuestions = [];
+    }
+    updated[levelIndex].modules[moduleIndex].codingQuestions.push({
+      title: '',
+      url: '',
+    });
+    setLevels(updated);
+  };
+
+  const removeCodingQuestion = (levelIndex: number, moduleIndex: number, qIndex: number) => {
+    const updated = [...levels];
+    if (updated[levelIndex].modules[moduleIndex].codingQuestions) {
+      updated[levelIndex].modules[moduleIndex].codingQuestions.splice(qIndex, 1);
+    }
+    setLevels(updated);
+  };
+
+  const updateCodingQuestion = (levelIndex: number, moduleIndex: number, qIndex: number, field: string, value: string) => {
+    const updated = [...levels];
+    if (updated[levelIndex].modules[moduleIndex].codingQuestions) {
+      updated[levelIndex].modules[moduleIndex].codingQuestions[qIndex][field] = value;
+    }
     setLevels(updated);
   };
 
@@ -110,6 +139,20 @@ const AdminCourseForm: React.FC<AdminCourseFormProps> = ({
       return alert('Title and description are required.');
     if (!allowedYears.length)
       return alert('Please select at least one year.');
+
+    // Validate that all modules have required fields
+    for (let i = 0; i < levels.length; i++) {
+      const level = levels[i];
+      for (let j = 0; j < level.modules.length; j++) {
+        const module = level.modules[j];
+        if (!module.title.trim()) {
+          return alert(`Level ${i + 1}, Module ${j + 1}: Title is required.`);
+        }
+        if (!module.content.trim()) {
+          return alert(`Level ${i + 1}, Module ${j + 1}: YouTube Video URL is required.`);
+        }
+      }
+    }
 
     setSaving(true);
     try {
@@ -299,6 +342,42 @@ const AdminCourseForm: React.FC<AdminCourseFormProps> = ({
                     setLevels(updated);
                   }}
                 />
+
+                {/* Coding Questions */}
+                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Coding Questions</Typography>
+                {mod.codingQuestions?.map((cq: any, qi: number) => (
+                  <Box key={qi} sx={{ mb: 1, pl: 2, borderLeft: '2px solid #ddd' }}>
+                    <TextField
+                      fullWidth
+                      label="Question Title"
+                      sx={{ mb: 1 }}
+                      value={cq.title}
+                      onChange={(e) => updateCodingQuestion(li, mi, qi, 'title', e.target.value)}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Question URL"
+                      sx={{ mb: 1 }}
+                      value={cq.url}
+                      onChange={(e) => updateCodingQuestion(li, mi, qi, 'url', e.target.value)}
+                    />
+                    <IconButton
+                      color="error"
+                      onClick={() => removeCodingQuestion(li, mi, qi)}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Button
+                  startIcon={<AddCircle />}
+                  onClick={() => addCodingQuestion(li, mi)}
+                  sx={{ mt: 1 }}
+                  size="small"
+                >
+                  Add Coding Question
+                </Button>
+
                 <IconButton
                   color="error"
                   onClick={() => {

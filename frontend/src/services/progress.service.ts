@@ -21,3 +21,9 @@ export const getProgress = async (courseId: string) => {
   const res = await api.get(`/progress/${courseId}`);
   return res.data;
 };
+
+export const markModuleComplete = async (courseId: string, moduleId: string) => {
+  if (!courseId || !moduleId) throw new Error('Missing courseId or moduleId');
+  const res = await api.post(`/progress/${courseId}/${moduleId}/complete`);
+  return res.data;
+};

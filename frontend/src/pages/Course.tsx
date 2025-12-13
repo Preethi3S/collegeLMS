@@ -80,11 +80,11 @@ const CoursePage: React.FC = () => {
   const overallProgress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Grid container spacing={3}>
+    <Container maxWidth="lg" sx={{ py: 1, px: 1 }}>
+      <Grid container spacing={2}>
         {/* Left Sidebar: Course Outline */}
         <Grid item xs={12} md={3}>
-          <Card elevation={1} sx={{ borderRadius: 3, position: 'sticky', top: 80 }}>
+          <Card elevation={1} sx={{ borderRadius: 3, position: 'sticky', top: 56 }}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>📚 Course Content</Typography>
               
@@ -145,7 +145,7 @@ const CoursePage: React.FC = () => {
 
         {/* Main Content: Video Player & Details */}
         <Grid item xs={12} md={9}>
-          <Card elevation={1} sx={{ borderRadius: 3, mb: 3 }}>
+          <Card elevation={1} sx={{ borderRadius: 3, mb: 2 }}>
             <CardContent>
               <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>{course.title}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{course.description}</Typography>
@@ -165,12 +165,13 @@ const CoursePage: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedModule.description}</Typography>
                 )}
 
-                <Box sx={{ mb: 3, bgcolor: '#f5f5f5', borderRadius: 2, p: 2 }}>
+                <Box sx={{ mb: 2, bgcolor: '#f5f5f5', borderRadius: 2, p: 2 }}>
                   <VideoModule
                     courseId={course._id}
                     moduleId={selectedModule._id}
                     content={selectedModule.content}
                     videoLength={selectedModule.videoLength}
+                    codingQuestions={selectedModule.codingQuestions}
                     onComplete={refreshProgress}
                   />
                 </Box>

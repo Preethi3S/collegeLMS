@@ -8,6 +8,7 @@ const upload = require('../middleware/upload.middleware');
 router.get('/me', auth, userController.getProfile);
 router.put('/me', auth, userController.updateProfile);
 router.get('/dashboard', auth, userController.getDashboard);
+router.get('/admin-id', auth, userController.getAdminId);
 
 // 🧠 Admin-only routes
 router.get('/students', auth, adminOnly, userController.listStudents);

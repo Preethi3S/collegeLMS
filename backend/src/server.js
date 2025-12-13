@@ -13,10 +13,7 @@ app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Connect to MongoDB
-mongoose.connect(config.mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(config.mongoURI)
 .then(() => console.log('MongoDB Connected'))
 .catch(err => console.log('MongoDB Connection Error:', err));
 
@@ -27,6 +24,7 @@ const courseRoutes = require('./routes/course.routes');
 const messageRoutes = require('./routes/message.routes');
 const progressRoutes = require('./routes/progress.routes');
 const presenceRoutes = require('./routes/presence.routes');
+const externalRoutes = require('./routes/external.routes');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -35,6 +33,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/presence', presenceRoutes);
+app.use('/api/external', externalRoutes);
 
 const PORT = config.port || 5000;
 

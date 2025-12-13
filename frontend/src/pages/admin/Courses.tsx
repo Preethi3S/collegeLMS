@@ -74,13 +74,13 @@ const AdminCourses: React.FC = () => {
   };
 
   return (
-    <Container sx={{ py: 3 }}>
+    <Container sx={{ py: 1, px: 1 }}>
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          mb: 3,
+          mb: 2,
         }}
       >
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -115,7 +115,7 @@ const AdminCourses: React.FC = () => {
         </Box>
       </Box>
 
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 1 }}>
         {isError ? (
           <Typography color="error" align="center">
             Error loading courses. Please try again.
@@ -125,7 +125,7 @@ const AdminCourses: React.FC = () => {
         ) : !courses?.length ? (
           <Typography align="center">No courses found.</Typography>
         ) : (
-          <List>
+          <List dense sx={{ p: 0 }}>
             {courses.map((course: any) => (
               <ListItem
                 key={course._id}
@@ -133,6 +133,8 @@ const AdminCourses: React.FC = () => {
                 onDoubleClick={() => handleEdit(course)}
                 disabled={deleting}
                 sx={{
+                  py: 0.5,
+                  px: 1,
                   '&:hover': {
                     backgroundColor: '#f7f7f9',
                   },
@@ -174,19 +176,12 @@ const AdminCourses: React.FC = () => {
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => handleProgress(course._id)}
-                    sx={{ mr: 1 }}
-                  >
-                    Progress
-                  </Button>
-                  <IconButton
-                    edge="end"
                     onClick={() => handleEdit(course)}
                     disabled={deleting}
                     sx={{ mr: 1 }}
                   >
-                    <i className="ri-edit-line" />
-                  </IconButton>
+                    Edit
+                  </Button>
                   <IconButton
                     edge="end"
                     color="error"

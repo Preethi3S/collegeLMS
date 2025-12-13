@@ -4,8 +4,14 @@ const moduleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   type: { type: String, default: 'video' },
-  content: { type: String, required: true }, // YouTube URL
+  content: { type: String, required: true }, // YouTube URL or main content
   videoLength: { type: Number, default: 0 },
+  codingQuestions: [ // Array of coding question URLs
+    {
+      title: { type: String, default: 'Coding Question' },
+      url: { type: String, required: true },
+    }
+  ],
   order: { type: Number, default: 1 },
   resources: [
     {
