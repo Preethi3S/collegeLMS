@@ -1,4 +1,4 @@
-import api from '@/services/api';
+/* import api from '@/services/api';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import React, { useState } from 'react';
 
@@ -64,3 +64,4 @@ const AdminCourseImport: React.FC<Props> = ({ onImported }) => {
 };
 
 export default AdminCourseImport;
+ */

@@ -1,6 +1,6 @@
  import AdminCourseEditModal from '@/components/AdminCourseEditModal';
 import AdminCourseForm from '@/components/AdminCourseForm';
-import AdminCourseImport from '@/components/AdminCourseImport';
+/* import AdminCourseImport from '@/components/AdminCourseImport'; */
 import AdminCourseProgress from '@/components/AdminCourseProgress';
 import api from '@/services/api';
 import { getCourses } from '@/services/course.service';
@@ -87,7 +87,7 @@ const AdminCourses: React.FC = () => {
           Manage Courses
         </Typography>
         <Box>
-          <AdminCourseImport onImported={() => refetch()} />
+         {/*  <AdminCourseImport onImported={() => refetch()} />
           <Button
             sx={{ mr: 1 }}
             variant="outlined"
@@ -108,7 +108,7 @@ const AdminCourses: React.FC = () => {
             }}
           >
             Export CSV
-          </Button>
+          </Button> */}
           <Button variant="contained" onClick={handleCreate}>
             Create Course
           </Button>
