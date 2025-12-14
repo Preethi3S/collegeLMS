@@ -1,6 +1,6 @@
 import AdminStudentDeleteBulk from '@/components/AdminStudentDeleteBulk';
 import AdminStudentImport from '@/components/AdminStudentImport';
-import {StudentProfileModal} from '@/components/StudentProfileModal';
+import { StudentProfileModal } from '@/components/StudentProfileModal';
 import { deleteStudent, listStudents } from '@/services/user.service';
 import {
   Box,
@@ -133,8 +133,8 @@ const AdminStudents: React.FC = () => {
               <MenuItem value="4">4th Year</MenuItem>
             </Select>
           </FormControl>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             size="small"
             onClick={() => {
               setNameFilter('');
@@ -175,9 +175,9 @@ const AdminStudents: React.FC = () => {
                     <TableCell>{s.department || '—'}</TableCell>
                     <TableCell>
                       <Button size="small" variant="outlined" onClick={() => setSelectedStudent(s)}>View</Button>
-                      <Button 
-                        size="small" 
-                        color="error" 
+                      <Button
+                        size="small"
+                        color="error"
                         sx={{ ml: 1 }}
                         onClick={() => setDeleteId(s._id)}
                       >
@@ -192,8 +192,8 @@ const AdminStudents: React.FC = () => {
         )}
       </Paper>
 
-      <CreateStudentModal 
-        open={openCreate} 
+      <CreateStudentModal
+        open={openCreate}
         onClose={() => setOpenCreate(false)}
         onSuccess={handleCreateSuccess}
       />
@@ -205,8 +205,8 @@ const AdminStudents: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteId(null)} disabled={deleting}>Cancel</Button>
-          <Button 
-            color="error" 
+          <Button
+            color="error"
             variant="contained"
             onClick={handleDeleteConfirm}
             disabled={deleting}
@@ -217,10 +217,10 @@ const AdminStudents: React.FC = () => {
       </Dialog>
 
       {selectedStudent && (
-        <StudentProfileModal 
-          student={selectedStudent} 
-          open={!!selectedStudent} 
-          onClose={() => setSelectedStudent(null)} 
+        <StudentProfileModal
+          studentId={selectedStudent?._id}
+          open={!!selectedStudent}
+          onClose={() => setSelectedStudent(null)}
         />
       )}
     </Container>
