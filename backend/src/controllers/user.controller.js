@@ -15,10 +15,18 @@ exports.updateProfile = async (req, res) => {
         const updates = req.body || {};
 
         // If files uploaded, handle profile image and resume
+        // If files uploaded, handle profile image and resume
         if (req.files) {
             if (req.files.file && req.files.file[0]) {
-                const url = await uploadToCloudinary(req.files.file[0]);
-                updates.profileImage = url;
+                // Convert to Base64
+                const file = req.files.file[0];
+                const bitmap = fs.readFileSync(file.path);
+                const base64 = Buffer.from(bitmap).toString('base64');
+                const pImage = `data:${file.mimetype};base64,${base64}`;
+                updates.profileImage = pImage;
+
+                // Clean up temp file
+                try { fs.unlinkSync(file.path); } catch (e) { }
             }
             if (req.files.resume && req.files.resume[0]) {
                 const url = await uploadToCloudinary(req.files.resume[0]);
