@@ -53,99 +53,99 @@ exports.listStudents = async (req, res) => {
 
 // Admin: bulk upload students from Excel/CSV
 exports.uploadStudents = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    const rows = parseExcelFile(req.file.path);
-
-    const created = [];
-    const skipped = [];
-
-    for (const row of rows) {
-      // Normalize fields from Excel
-      const username = String(row.username || row.Username || '').trim();
-      const email = String(row.email || row.Email || '').trim();
-      const password = String(row.password || row.Password || '').trim();
-
-      const firstName = String(
-        row.firstName || row.firstname || row.FirstName || ''
-      ).trim();
-
-      const lastName = String(
-        row.lastName || row.lastname || row.LastName || ''
-      ).trim();
-
-      const rollNumber = String(
-        row.rollNumber ||
-          row['roll number'] ||
-          row.RollNumber ||
-          ''
-      ).trim();
-
-      const department = String(
-        row.department || row.Department || ''
-      ).trim();
-
-      const year = Number(row.year || row.Year);
-
-      // Validation
-      if (!username || !email || !password || !year) {
-        skipped.push({
-          row,
-          reason: 'Missing required fields (username/email/password/year)',
-        });
-        continue;
-      }
-
-      if (isNaN(year) || year < 1 || year > 4) {
-        skipped.push({ row, reason: 'Invalid year (must be 1–4)' });
-        continue;
-      }
-
-      // Check duplicate user
-      const exists = await User.findOne({
-        $or: [{ username }, { email }],
-      });
-
-      if (exists) {
-        skipped.push({ row, reason: 'User already exists' });
-        continue;
-      }
-
-      // Create student
-      const user = new User({
-        username,
-        email,
-        password,
-        role: 'student',
-        firstName: firstName || 'Student',
-        lastName: lastName || '',
-        year,
-        rollNumber,
-        department,
-      });
-
-      await user.save();
-
-      created.push({ username, email });
-    }
-
-    // Cleanup uploaded file
     try {
-      fs.unlinkSync(req.file.path);
-    } catch (e) {}
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
 
-    res.json({
-      createdCount: created.length,
-      skippedCount: skipped.length,
-      skipped,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
+        const rows = parseExcelFile(req.file.path);
+
+        const created = [];
+        const skipped = [];
+
+        for (const row of rows) {
+            // Normalize fields from Excel
+            const username = String(row.username || row.Username || '').trim();
+            const email = String(row.email || row.Email || '').trim();
+            const password = String(row.password || row.Password || '').trim();
+
+            const firstName = String(
+                row.firstName || row.firstname || row.FirstName || ''
+            ).trim();
+
+            const lastName = String(
+                row.lastName || row.lastname || row.LastName || ''
+            ).trim();
+
+            const rollNumber = String(
+                row.rollNumber ||
+                row['roll number'] ||
+                row.RollNumber ||
+                ''
+            ).trim();
+
+            const department = String(
+                row.department || row.Department || ''
+            ).trim();
+
+            const year = Number(row.year || row.Year);
+
+            // Validation
+            if (!username || !email || !password || !year) {
+                skipped.push({
+                    row,
+                    reason: 'Missing required fields (username/email/password/year)',
+                });
+                continue;
+            }
+
+            if (isNaN(year) || year < 1 || year > 4) {
+                skipped.push({ row, reason: 'Invalid year (must be 1–4)' });
+                continue;
+            }
+
+            // Check duplicate user
+            const exists = await User.findOne({
+                $or: [{ username }, { email }],
+            });
+
+            if (exists) {
+                skipped.push({ row, reason: 'User already exists' });
+                continue;
+            }
+
+            // Create student
+            const user = new User({
+                username,
+                email,
+                password,
+                role: 'student',
+                firstName: firstName || 'Student',
+                lastName: lastName || '',
+                year,
+                rollNumber,
+                department,
+            });
+
+            await user.save();
+
+            created.push({ username, email });
+        }
+
+        // Cleanup uploaded file
+        try {
+            fs.unlinkSync(req.file.path);
+        } catch (e) { }
+
+        res.json({
+            createdCount: created.length,
+            skippedCount: skipped.length,
+            skipped,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
 };
 
 
@@ -254,8 +254,20 @@ exports.getDashboard = async (req, res) => {
     try {
         const studentId = req.user._id;
 
-        // Get progress entries and populate course info
-        const progresses = await Progress.find({ student: studentId }).populate('course').lean();
+        // Get student with enrolled courses populated
+        const user = await User.findById(studentId).populate('enrolledCourses').lean();
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Get progress entries
+        const progresses = await Progress.find({ student: studentId }).lean();
+
+        // Create a map of progress by course ID for easy lookup
+        const progressMap = {};
+        progresses.forEach(p => {
+            if (p.course) {
+                progressMap[String(p.course)] = p;
+            }
+        });
 
         // Calculate stats
         let totalWatchTime = 0;
@@ -263,26 +275,34 @@ exports.getDashboard = async (req, res) => {
         let completedCourses = 0;
         const courses = [];
 
-        for (const p of progresses) {
-            totalWatchTime += p.totalWatchTime || 0;
-            totalProgress += p.overallProgress || 0;
-            if ((p.overallProgress || 0) >= 100) completedCourses++;
-            if (p.course) {
+        // Iterate over ENROLLED courses
+        if (user.enrolledCourses && user.enrolledCourses.length > 0) {
+            for (const course of user.enrolledCourses) {
+                const p = progressMap[String(course._id)];
+
+                const courseProgress = p?.overallProgress || 0;
+                const courseWatchTime = p?.totalWatchTime || 0;
+
+                totalWatchTime += courseWatchTime;
+                totalProgress += courseProgress;
+                if (courseProgress >= 100) completedCourses++;
+
                 courses.push({
-                    id: p.course._id,
-                    title: p.course.title,
-                    thumbnail: p.course.thumbnail,
-                    progress: p.overallProgress || 0,
+                    id: course._id,
+                    title: course.title,
+                    thumbnail: course.thumbnail,
+                    progress: courseProgress,
                 });
             }
         }
 
-        // Get enrolled courses count
-        const user = await User.findById(studentId).lean();
-        const enrolledCourses = user?.enrolledCourses?.length || 0;
+        // Calculate extra stats from progresses that might not be in enrolledCourses (optional/edge case)
+        // For accurate stats, we might want to only count enrolled ones, or all progress. 
+        // Let's stick to enrolled courses for consistency with the list.
 
-        // Overall progress as average
-        const overallProgress = progresses.length > 0 ? Math.round(totalProgress / progresses.length) : 0;
+        // Overall progress as average of enrolled courses
+        const enrolledCount = user.enrolledCourses?.length || 0;
+        const overallProgress = enrolledCount > 0 ? Math.round(totalProgress / enrolledCount) : 0;
 
         // Calculate rank within department
         let rank = null;
@@ -305,7 +325,7 @@ exports.getDashboard = async (req, res) => {
 
         res.json({
             stats: {
-                enrolledCourses,
+                enrolledCourses: enrolledCount,
                 overallProgress,
                 watchTime: totalWatchTime,
                 completedCourses,
