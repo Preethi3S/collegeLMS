@@ -16,9 +16,10 @@ interface Props {
   videoLength: number;
   codingQuestions?: CodingQuestion[];
   onComplete?: () => void;
+  onProgress?: () => void;
 }
 
-const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength, codingQuestions, onComplete }) => {
+const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength, codingQuestions, onComplete, onProgress }) => {
   const [watchTime, setWatchTime] = useState(0);
   const [percentWatched, setPercentWatched] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
@@ -28,9 +29,15 @@ const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSentTime = useRef(0);
 
-  const videoId = content.includes('youtube.com')
-    ? content.split('v=')[1]?.split('&')[0]
-    : content;
+  // Helper to extract video ID from various YouTube URL formats
+  const getYouTubeId = (url: string) => {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url;
+  };
+
+  const videoId = getYouTubeId(content);
 
   // Fetch resume progress
   useEffect(() => {
@@ -55,13 +62,18 @@ const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength
     if (resumeAt > 0) e.target.seekTo(resumeAt, true);
   };
 
+  const getDuration = () => {
+    if (videoLength > 0) return videoLength;
+    return playerRef.current ? playerRef.current.getDuration() : 0;
+  };
+
   const handlePlay: YouTubeProps['onPlay'] = () => {
     if (progressInterval.current) clearInterval(progressInterval.current);
 
     progressInterval.current = setInterval(async () => {
       if (!playerRef.current) return;
       const current = Math.floor(playerRef.current.getCurrentTime());
-      const duration = videoLength || playerRef.current.getDuration() || 1;
+      const duration = getDuration() || 1;
       const percent = Math.min((current / duration) * 100, 100);
 
       setWatchTime(current);
@@ -76,6 +88,7 @@ const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength
           resumeAt: current,
         });
         lastSentTime.current = current;
+        onProgress?.();
       }
     }, 10000); // every 10s
   };
@@ -87,17 +100,22 @@ const VideoModule: React.FC<Props> = ({ courseId, moduleId, content, videoLength
     await markVideoProgress(courseId, moduleId, {
       watchTime: 0,
       percentWatched,
-      totalLength: videoLength,
+      totalLength: getDuration(),
       resumeAt: Math.floor(playerRef.current.getCurrentTime()),
     });
+    onProgress?.();
   };
 
   const handleEnd: YouTubeProps['onEnd'] = async () => {
     if (progressInterval.current) clearInterval(progressInterval.current);
+
+    // Ensure we use the best duration available
+    const finalDuration = getDuration();
+
     await markVideoProgress(courseId, moduleId, {
-      watchTime: videoLength,
+      watchTime: 0, // No watch time delta on end, just mark status
       percentWatched: 100,
-      totalLength: videoLength,
+      totalLength: finalDuration,
       resumeAt: 0,
     });
     onComplete?.();

@@ -1,25 +1,25 @@
 import api from '@/services/api';
 import { AddCircle, Delete } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Checkbox,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    FormControl,
-    FormControlLabel,
-    IconButton,
-    InputLabel,
-    ListItemText,
-    MenuItem,
-    Paper,
-    Select,
-    TextField,
-    Typography,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  InputLabel,
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
@@ -331,17 +331,7 @@ const AdminCourseForm: React.FC<AdminCourseFormProps> = ({
                     setLevels(updated);
                   }}
                 />
-                <TextField
-                  fullWidth
-                  label="Video Duration (in seconds)"
-                  type="number"
-                  value={mod.videoLength}
-                  onChange={(e) => {
-                    const updated = [...levels];
-                    updated[li].modules[mi].videoLength = Number(e.target.value);
-                    setLevels(updated);
-                  }}
-                />
+                {/* Video Duration input removed as per requirements */}
 
                 {/* Coding Questions */}
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Coding Questions</Typography>
