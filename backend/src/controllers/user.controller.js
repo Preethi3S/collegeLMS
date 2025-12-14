@@ -48,10 +48,41 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-// Admin: list all students
+// Admin: list all students with progress stats
 exports.listStudents = async (req, res) => {
     try {
-        const students = await User.find({ role: 'student' }).select('-password');
+        const students = await User.aggregate([
+            { $match: { role: 'student' } },
+            {
+                $lookup: {
+                    from: 'progresses',
+                    localField: '_id',
+                    foreignField: 'student',
+                    as: 'progressData'
+                }
+            },
+            {
+                $addFields: {
+                    avgProgress: { $ifNull: [{ $avg: '$progressData.overallProgress' }, 0] },
+                    completedCourses: {
+                        $size: {
+                            $filter: {
+                                input: '$progressData',
+                                as: 'p',
+                                cond: { $gte: ['$$p.overallProgress', 100] }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    password: 0,
+                    progressData: 0,
+                    __v: 0
+                }
+            }
+        ]);
         res.json({ students });
     } catch (error) {
         console.error(error);
