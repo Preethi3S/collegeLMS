@@ -24,12 +24,12 @@ const CoursePage: React.FC = () => {
         setLoading(true);
         const courseRes = await getCourse(courseId);
         setCourse(courseRes.course);
-        
+
         // Select first module by default
         if (courseRes.course?.levels?.[0]?.modules?.[0]) {
           setSelectedModule(courseRes.course.levels[0].modules[0]);
         }
-        
+
         const progressRes = await getProgress(courseId);
         setProgress(progressRes.progress);
       } catch (err: any) {
@@ -87,7 +87,7 @@ const CoursePage: React.FC = () => {
           <Card elevation={1} sx={{ borderRadius: 3, position: 'sticky', top: 56 }}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>📚 Course Content</Typography>
-              
+
               <Box sx={{ mb: 2 }}>
                 <Typography variant="caption" color="text.secondary">Overall Progress</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
@@ -111,8 +111,8 @@ const CoursePage: React.FC = () => {
                       const isCompleted = isModuleCompleted(module._id);
                       const isSelected = selectedModule?._id === module._id;
                       return (
-                        <ListItem 
-                          disablePadding 
+                        <ListItem
+                          disablePadding
                           key={module._id}
                           onClick={() => setSelectedModule(module)}
                         >
@@ -173,6 +173,7 @@ const CoursePage: React.FC = () => {
                     videoLength={selectedModule.videoLength}
                     codingQuestions={selectedModule.codingQuestions}
                     onComplete={refreshProgress}
+                    onProgress={refreshProgress}
                   />
                 </Box>
 

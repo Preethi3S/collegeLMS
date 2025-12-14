@@ -6,7 +6,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MessageIcon from '@mui/icons-material/Message';
 import PeopleIcon from '@mui/icons-material/People';
 import logo from '@/assets/logo.png';
+import { getUnreadCount } from '@/services/message.service';
+import { useQuery } from '@tanstack/react-query';
 import {
+  Badge,
   Box,
   Drawer,
   List,
@@ -32,6 +35,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const { user, logout } = useAuthStore();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const { data: unreadCount = 0 } = useQuery(['unreadCount'], getUnreadCount, {
+    refetchInterval: 10000,
+    enabled: !!user
+  });
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
@@ -100,6 +108,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
+          const isMessage = item.label === 'Messages';
+
           return (
             <ListItem key={item.path} disablePadding>
               <ListItemButton
@@ -118,7 +128,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                  <Icon sx={{ fontSize: '1.2rem' }} />
+                  {isMessage ? (
+                    <Badge badgeContent={unreadCount} color="error" invisible={!unreadCount}>
+                      <Icon sx={{ fontSize: '1.2rem' }} />
+                    </Badge>
+                  ) : (
+                    <Icon sx={{ fontSize: '1.2rem' }} />
+                  )}
                 </ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItemButton>
@@ -172,23 +188,23 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   }
 
   return (
-  <Box
-    sx={{
-      width: 280,
-      position: 'fixed',
-      left: 0,
-      top: '64px',                         // ⬅ Sidebar begins below header
-      height: 'calc(100vh - 64px)',         // ⬅ Sidebar fills remaining space
-      display: { xs: 'none', md: 'block' },
-      overflowY: 'auto',
-      backgroundColor: theme.palette.background.paper,
-      borderRight: `1px solid ${theme.palette.divider}`,
-      zIndex: 1200,                         // below header (1300), above content
-    }}
-  >
-    {drawerContent}
-  </Box>
-);
+    <Box
+      sx={{
+        width: 280,
+        position: 'fixed',
+        left: 0,
+        top: '64px',                         // ⬅ Sidebar begins below header
+        height: 'calc(100vh - 64px)',         // ⬅ Sidebar fills remaining space
+        display: { xs: 'none', md: 'block' },
+        overflowY: 'auto',
+        backgroundColor: theme.palette.background.paper,
+        borderRight: `1px solid ${theme.palette.divider}`,
+        zIndex: 1200,                         // below header (1300), above content
+      }}
+    >
+      {drawerContent}
+    </Box>
+  );
 
 };
 

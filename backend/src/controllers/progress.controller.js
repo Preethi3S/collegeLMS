@@ -46,7 +46,7 @@ exports.recordWatchSession = async (req, res) => {
                 levels: initialLevels // Initialize it here
             });
         }
-        
+
         // This check is redundant after the above fix but kept for robustness 
         // in case the course structure changes.
         if (!progress.levels || progress.levels.length === 0) {
@@ -85,15 +85,15 @@ exports.recordWatchSession = async (req, res) => {
         modProg.lastWatchedAt = new Date();
         modProg.resumeAt = resumeAt || 0;
 
-        // Check if video is completed (90% watched)
-        if (percentWatched >= 90 && !modProg.videoCompleted) {
+        // Check if video is completed (95% watched) to consider it "fully watched"
+        if (percentWatched >= 95 && !modProg.videoCompleted) {
             modProg.videoCompleted = true;
         }
 
         // Check if module should be marked as completed
         const module = course.levels.flatMap(lvl => lvl.modules).find(m => String(m._id) === String(moduleId));
         const hasCodingQuestions = module && module.codingQuestions && module.codingQuestions.length > 0;
-        
+
         if (hasCodingQuestions) {
             // For modules with coding questions, require both video and coding completion
             if (modProg.videoCompleted && modProg.codingCompleted && !modProg.completed) {
@@ -207,7 +207,7 @@ exports.markModuleComplete = async (req, res) => {
             progress = new Progress({ student: studentId, course: courseId, startedAt: new Date() });
             progress.levels = course.levels.map((lvl) => ({
                 levelId: lvl._id,
-                moduleProgress: lvl.modules.map((m) => ({ 
+                moduleProgress: lvl.modules.map((m) => ({
                     moduleId: m._id,
                     videoCompleted: false,
                     codingCompleted: false,
@@ -220,11 +220,11 @@ exports.markModuleComplete = async (req, res) => {
             for (const mod of lvl.moduleProgress) {
                 if (String(mod.moduleId) === String(moduleId)) {
                     mod.codingCompleted = true;
-                    
+
                     // Check if module should be marked as completed
                     const module = course.levels.flatMap(lvl => lvl.modules).find(m => String(m._id) === String(moduleId));
                     const hasCodingQuestions = module && module.codingQuestions && module.codingQuestions.length > 0;
-                    
+
                     if (hasCodingQuestions) {
                         // For modules with coding questions, require both video and coding completion
                         if (mod.videoCompleted && mod.codingCompleted && !mod.completed) {
@@ -283,18 +283,18 @@ exports.getDetailedCourseAnalytics = async (req, res) => {
 
         // Helper to calculate progress for each student
         const detailedAnalytics = progresses.map((p) => {
-            
+
             // Calculate Level and Module Progress details
             const levelsProgress = course.levels.map(courseLvl => {
                 const studentLvl = p.levels.find(pl => String(pl.levelId) === String(courseLvl._id));
                 const totalModulesInLevel = courseLvl.modules.length;
-                
+
                 let completedModulesInLevel = 0;
                 let moduleProgress = [];
 
                 if (studentLvl) {
                     completedModulesInLevel = studentLvl.moduleProgress.filter(m => m.completed).length;
-                    
+
                     // Map modules in this level to their individual progress
                     moduleProgress = courseLvl.modules.map(courseMod => {
                         const studentMod = studentLvl.moduleProgress.find(pm => String(pm.moduleId) === String(courseMod._id));
@@ -306,9 +306,9 @@ exports.getDetailedCourseAnalytics = async (req, res) => {
                         };
                     });
                 }
-                
+
                 const levelOverallProgress = totalModulesInLevel > 0 ? Math.round((completedModulesInLevel / totalModulesInLevel) * 100) : 0;
-                
+
                 return {
                     levelId: courseLvl._id,
                     levelTitle: courseLvl.title,
@@ -326,7 +326,7 @@ exports.getDetailedCourseAnalytics = async (req, res) => {
                 completionDuration: p.completionDuration,
                 lastAccessedAt: p.lastAccessedAt,
                 // NEW fields
-                levelsProgress: levelsProgress, 
+                levelsProgress: levelsProgress,
             };
         });
 
