@@ -1,20 +1,20 @@
 import api from '@/services/api';
 import { Mail as MailIcon, Phone as PhoneIcon, School as SchoolIcon } from '@mui/icons-material';
 import {
-    Alert,
-    Avatar,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    Grid,
-    Stack,
-    Typography,
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  Stack,
+  Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
@@ -56,7 +56,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             fetch(`https://api.github.com/users/${ghUser}`)
               .then((r) => r.json())
               .then((data) => setGithubStats(data))
-              .catch(() => {});
+              .catch(() => { });
           }
         }
 
@@ -172,6 +172,14 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
+                    CGPA
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    {student.cgpa || 'N/A'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary">
                     Status
                   </Typography>
                   <Chip
@@ -194,12 +202,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   <MailIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                   <Typography variant="body2">{student.email || 'N/A'}</Typography>
                 </Box>
-                {student.phone && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PhoneIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    <Typography variant="body2">{student.phone}</Typography>
-                  </Box>
-                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <PhoneIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <Typography variant="body2">{student.phone || 'N/A'}</Typography>
+                </Box>
                 {student.dateOfBirth && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <SchoolIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -225,13 +231,23 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </Box>
             )}
 
-            {/* Coding Profiles */}
-            {(student.githubLink || student.leetcodeLink) && (
+            {/* Professional & Coding Profiles */}
+            {(student.linkedinLink || student.githubLink || student.leetcodeLink) && (
               <Box>
                 <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                  💻 Coding Profiles
+                  🔗 Professional Profiles
                 </Typography>
                 <Stack spacing={1}>
+                  {student.linkedinLink && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>LinkedIn</Typography>
+                        <Typography variant="caption" color="text.secondary">{student.linkedinLink}</Typography>
+                      </Box>
+                      <Button size="small" href={student.linkedinLink} target="_blank" sx={{ mt: 1 }}>View</Button>
+                    </Box>
+                  )}
+
                   {student.githubLink && (
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>

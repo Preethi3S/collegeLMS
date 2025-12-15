@@ -6,7 +6,7 @@ const upload = require('../middleware/upload.middleware');
 
 // 🧑‍🎓 Authenticated user routes
 router.get('/me', auth, userController.getProfile);
-router.put('/me', auth, userController.updateProfile);
+router.put('/me', auth, upload.fields([{ name: 'file', maxCount: 1 }, { name: 'resume', maxCount: 1 }]), userController.updateProfile);
 router.get('/dashboard', auth, userController.getDashboard);
 router.get('/admin-id', auth, userController.getAdminId);
 

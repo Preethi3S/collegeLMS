@@ -27,6 +27,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import CreateStudentModal from './CreateStudent';
+import StudentEditModal from '@/components/StudentEditModal';
 
 const AdminStudents: React.FC = () => {
   const queryClient = useQueryClient();
@@ -37,6 +38,7 @@ const AdminStudents: React.FC = () => {
 
   // Profile modal state
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [editStudent, setEditStudent] = useState<any>(null);
 
   // Filter states
   const [nameFilter, setNameFilter] = useState('');
@@ -175,6 +177,7 @@ const AdminStudents: React.FC = () => {
                     <TableCell>{s.department || '—'}</TableCell>
                     <TableCell>
                       <Button size="small" variant="outlined" onClick={() => setSelectedStudent(s)}>View</Button>
+                      <Button size="small" variant="outlined" color="primary" sx={{ ml: 1 }} onClick={() => setEditStudent(s)}>Edit</Button>
                       <Button
                         size="small"
                         color="error"
@@ -196,6 +199,16 @@ const AdminStudents: React.FC = () => {
         open={openCreate}
         onClose={() => setOpenCreate(false)}
         onSuccess={handleCreateSuccess}
+      />
+
+      <StudentEditModal
+        open={!!editStudent}
+        student={editStudent}
+        onClose={() => setEditStudent(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries(['students']);
+          setEditStudent(null);
+        }}
       />
 
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>

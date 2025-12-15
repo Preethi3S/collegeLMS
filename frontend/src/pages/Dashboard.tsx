@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const id = setInterval(() => {
-      api.post("/presence/heartbeat", { seconds: 30 }).catch(() => {});
+      api.post("/presence/heartbeat", { seconds: 30 }).catch(() => { });
     }, 30000);
     return () => clearInterval(id);
   }, []);
@@ -294,21 +294,29 @@ const Dashboard: React.FC = () => {
                     🔥 Activity (Last 30 Days)
                   </Typography>
 
-                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 0.8 }}>
-                    {presenceData.map((p: any) => (
-                      <Tooltip key={p.date} title={`${p.date}: ${Math.round(p.seconds / 60)} mins`}>
-                        <Box
-                          sx={{
-                            height: 32,
-                            borderRadius: 1,
-                            bgcolor: getPresenceColor(p.seconds),
-                            cursor: "pointer",
-                            transition: "transform 0.2s",
-                            "&:hover": { transform: "scale(1.1)" },
-                          }}
-                        />
-                      </Tooltip>
-                    ))}
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 0.5 }}>
+                    {/* Render last 30 days explicitly */}
+                    {[...Array(30)].map((_, i) => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - (29 - i)); // -29 to 0 (today)
+                      const dateStr = d.toISOString().slice(0, 10);
+                      const seconds = presenceMap[dateStr] || 0;
+
+                      return (
+                        <Tooltip key={dateStr} title={`${dateStr}: ${Math.round(seconds / 60)} mins`}>
+                          <Box
+                            sx={{
+                              height: 20,
+                              borderRadius: 0.5,
+                              bgcolor: getPresenceColor(seconds),
+                              cursor: "pointer",
+                              transition: "transform 0.2s",
+                              "&:hover": { transform: "scale(1.2)", border: '1px solid #777' },
+                            }}
+                          />
+                        </Tooltip>
+                      );
+                    })}
                   </Box>
                 </CardContent>
               </Card>

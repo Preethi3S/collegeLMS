@@ -14,6 +14,7 @@ const Profile: React.FC = () => {
   const [rollNumber, setRollNumber] = useState('');
   const [year, setYear] = useState<number | ''>('');
   const [department, setDepartment] = useState('');
+  const [phone, setPhone] = useState('');
   const [cgpa, setCgpa] = useState<number | ''>('');
   const [linkedinLink, setLinkedinLink] = useState('');
   const [githubLink, setGithubLink] = useState('');
@@ -25,6 +26,7 @@ const Profile: React.FC = () => {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
       setEmail(user.email || '');
+      setPhone(user.phone || '');
       setRollNumber(user.rollNumber || '');
       setYear(user.year || '');
       setDepartment(user.department || '');
@@ -101,7 +103,7 @@ const Profile: React.FC = () => {
           >
             <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
               <Avatar
-                src={user?.profileImage}
+                src={file ? URL.createObjectURL(file) : user?.profileImage}
                 sx={{
                   width: 120,
                   height: 120,
@@ -111,8 +113,12 @@ const Profile: React.FC = () => {
                   fontSize: '3rem'
                 }}
               >
-                {firstName.charAt(0)}
-                {lastName.charAt(0)}
+                {!file && !user?.profileImage && (
+                  <>
+                    {firstName.charAt(0)}
+                    {lastName.charAt(0)}
+                  </>
+                )}
               </Avatar>
 
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -169,6 +175,7 @@ const Profile: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
                       label="First Name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
@@ -178,15 +185,17 @@ const Profile: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
                       label="Last Name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
                       label="Email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -196,6 +205,17 @@ const Profile: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
+                      label="Phone Number"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      disabled
                       label="Roll Number"
                       value={rollNumber}
                       onChange={(e) => setRollNumber(e.target.value)}
@@ -205,6 +225,7 @@ const Profile: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
                       label="Department"
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
@@ -223,6 +244,7 @@ const Profile: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
                       label="Year"
                       type="number"
                       value={year}
@@ -235,6 +257,7 @@ const Profile: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      disabled
                       label="CGPA"
                       type="number"
                       value={cgpa}
@@ -308,6 +331,11 @@ const Profile: React.FC = () => {
                 >
                   {mutation.isLoading ? 'Saving...' : 'Save Changes'}
                 </Button>
+                {file && (
+                  <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                    Selected: {file.name}
+                  </Typography>
+                )}
               </form>
             </CardContent>
           </Card>
