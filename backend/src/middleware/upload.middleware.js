@@ -19,7 +19,14 @@ const fileFilter = (req, file, cb) => {
         file.mimetype === 'application/msword' ||
         file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         file.mimetype === 'application/vnd.ms-excel' ||
-        file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.mimetype === 'text/csv' ||
+        file.mimetype === 'application/csv' ||
+        file.mimetype === 'text/x-csv' ||
+        file.mimetype === 'application/x-csv' ||
+        file.mimetype === 'text/comma-separated-values' ||
+        file.mimetype === 'text/x-comma-separated-values' ||
+        file.mimetype === 'text/plain') {
         cb(null, true);
     } else {
         cb(new Error('Invalid file type'), false);
