@@ -1,7 +1,6 @@
  import AdminCourseEditModal from '@/components/AdminCourseEditModal';
 import AdminCourseForm from '@/components/AdminCourseForm';
 /* import AdminCourseImport from '@/components/AdminCourseImport'; */
-import AdminCourseProgress from '@/components/AdminCourseProgress';
 import api from '@/services/api';
 import { getCourses } from '@/services/course.service';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -9,9 +8,6 @@ import {
     Box,
     Button,
     Container,
-    Dialog,
-    DialogContent,
-    DialogTitle,
     IconButton,
     LinearProgress,
     List,
@@ -40,8 +36,6 @@ const AdminCourses: React.FC = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editCourseId, setEditCourseId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   const handleCreate = () => {
     setOpen(true);
@@ -212,20 +206,6 @@ const AdminCourses: React.FC = () => {
           setEditCourseId(null);
         }}
       />
-
-      <Dialog
-        open={progressDialogOpen}
-        onClose={() => setProgressDialogOpen(false)}
-        fullWidth
-        maxWidth="lg"
-      >
-        <DialogTitle>📊 Course Progress Analytics</DialogTitle>
-        <DialogContent>
-          {selectedCourseId && (
-            <AdminCourseProgress courseId={selectedCourseId} />
-          )}
-        </DialogContent>
-      </Dialog>
     </Container>
   );
 };
