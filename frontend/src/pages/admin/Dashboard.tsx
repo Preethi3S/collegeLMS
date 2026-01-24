@@ -1,42 +1,42 @@
 import { getCourses } from '@/services/course.service';
 import { listStudents } from '@/services/user.service';
 import {
-  Assignment as AssignmentIcon,
-  Group as GroupIcon,
-  MenuBook as MenuBookIcon,
-  TrendingUp as TrendingUpIcon,
+    Assignment as AssignmentIcon,
+    Group as GroupIcon,
+    MenuBook as MenuBookIcon,
+    TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import {
-  Avatar,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Container,
-  Grid,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Paper,
-  Tab,
-  Tabs,
-  Typography,
+    Avatar,
+    Box,
+    Card,
+    CardContent,
+    Chip,
+    Container,
+    Grid,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    Paper,
+    Tab,
+    Tabs,
+    Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from 'recharts';
 
 const COLORS = ['#02367B', '#006CA5', '#0496C7', '#04BADE', '#55E2E9'];
@@ -230,7 +230,7 @@ const AdminDashboard: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {studentDistribution.map((entry, index) => (
+                    {studentDistribution.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -260,7 +260,7 @@ const AdminDashboard: React.FC = () => {
                     dataKey="value"
                     label
                   >
-                    {departmentData.map((entry, index) => (
+                    {departmentData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>

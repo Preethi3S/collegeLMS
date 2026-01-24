@@ -3,7 +3,6 @@ import Layout from './components/Layout';
 import useAuthStore from './context/auth.store';
 import { ThemeContextProvider } from './context/theme.context';
 import AdminCourses from './pages/admin/Courses';
-import CreateStudent from './pages/admin/CreateStudent';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminStudents from './pages/admin/Students';
 import CoursePage from './pages/Course';
@@ -37,7 +36,6 @@ function App() {
               <>
                 <Route path="/" element={<AdminDashboard />} />
                 <Route path="/students" element={<AdminStudents />} />
-                <Route path="/students/create" element={<CreateStudent />} />
                 <Route path="/courses" element={<AdminCourses />} />
               </>
             ) : (

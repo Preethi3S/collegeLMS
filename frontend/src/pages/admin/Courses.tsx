@@ -68,11 +68,6 @@ const AdminCourses: React.FC = () => {
     }
   };
 
-  const handleProgress = (courseId: string) => {
-    setSelectedCourseId(courseId);
-    setProgressDialogOpen(true);
-  };
-
   return (
     <Container sx={{ py: 1, px: 1 }}>
       <Box

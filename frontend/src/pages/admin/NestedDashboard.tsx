@@ -8,45 +8,42 @@ import api from '@/services/api';
 import { getCourses } from '@/services/course.service';
 import DownloadIcon from '@mui/icons-material/Download';
 import {
-  Box,
-  Button,
-  Checkbox,
-  Container,
-  FormControl,
-  FormControlLabel,
-  Grid,
-  InputLabel,
-  LinearProgress,
-  MenuItem,
-  Paper,
-  Select,
-  Slider,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  Divider,
+    Box,
+    Button,
+    Checkbox,
+    Container,
+    FormControl,
+    FormControlLabel,
+    Grid,
+    InputLabel,
+    LinearProgress,
+    MenuItem,
+    Paper,
+    Select,
+    Slider,
+    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
 } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-  XAxis,
-  YAxis,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    XAxis,
+    YAxis,
 } from 'recharts';
 
 type ViewLevel = 'year' | 'course' | 'department' | 'students';
 const years = [1, 2, 3, 4];
-const COLORS = ['#4B6CB7', '#67C8FF', '#10B981', '#F59E0B'];
 
 const cardShadow = "0 8px 24px rgba(0,0,0,0.08)";
 const gradientBg = "linear-gradient(135deg, rgba(75,108,183,0.08), rgba(103,200,255,0.05))";

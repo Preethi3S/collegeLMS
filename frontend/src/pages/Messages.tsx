@@ -5,8 +5,8 @@ import {
   getSent,
   getUnreadCount,
   markAsRead,
-  sendMessage,
-  sendBulkMessage
+  sendBulkMessage,
+  sendMessage
 } from '@/services/message.service';
 
 import {
@@ -17,7 +17,6 @@ import {
   CardContent,
   CircularProgress,
   Container,
-  Divider,
   FormControl,
   Grid,
   InputLabel,
