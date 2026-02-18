@@ -1,0 +1,29 @@
+import api from './api';
+
+export const markVideoProgress = async (
+  courseId,
+  moduleId,
+  data
+) => {
+  if (!courseId || !moduleId) throw new Error('Missing courseId or moduleId');
+  const res = await api.post(`/progress/${courseId}/${moduleId}/watch`, data);
+  return res.data;
+};
+
+export const getVideoProgress = async (courseId, moduleId) => {
+  if (!courseId || !moduleId) throw new Error('Missing courseId or moduleId');
+  const res = await api.get(`/progress/${courseId}/${moduleId}`);
+  return res.data;
+};
+
+export const getProgress = async (courseId) => {
+  if (!courseId) throw new Error('Missing courseId');
+  const res = await api.get(`/progress/${courseId}`);
+  return res.data;
+};
+
+export const markModuleComplete = async (courseId, moduleId) => {
+  if (!courseId || !moduleId) throw new Error('Missing courseId or moduleId');
+  const res = await api.post(`/progress/${courseId}/${moduleId}/complete`);
+  return res.data;
+};
