@@ -8,18 +8,33 @@ import {
 } from '@mui/icons-material';
 import {
     Box,
+    Button,
     Card,
     CardContent,
     Chip,
     Container,
+    FormControl,
     Grid,
     List,
     ListItem,
     ListItemAvatar,
     ListItemText,
+    InputLabel,
+    LinearProgress,
+    MenuItem,
     Paper,
+    Select,
+    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     Tab,
     Tabs,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -63,6 +78,10 @@ const AdminDashboard = () => {
   const { data: students = [] } = useQuery(['students'], () => listStudents());
   const { data: courses = [] } = useQuery(['courses'], () => getCourses());
   const [selectedDept, setSelectedDept] = useState('All');
+  const [yearFilter, setYearFilter] = useState('All');
+  const [deptFilter, setDeptFilter] = useState('All');
+  const [rankMode, setRankMode] = useState('top');
+  const [limit, setLimit] = useState(10);
 
   // --- Derived Data Calculations ---
 
@@ -95,6 +114,49 @@ const AdminDashboard = () => {
   }, [students]);
 
   const departments = useMemo(() => departmentData.map(d => d.name), [departmentData]);
+
+  // Year options (unique years from students)
+  const yearOptions = useMemo(() => {
+    const unique = new Set();
+    students.forEach((s) => {
+      if (s.year) unique.add(Number(s.year));
+    });
+    return Array.from(unique).sort();
+  }, [students]);
+
+  // Department options based on selected year
+  const departmentOptions = useMemo(() => {
+    const pool = yearFilter === 'All'
+      ? students
+      : students.filter((s) => Number(s.year) === Number(yearFilter));
+
+    const unique = new Set();
+    pool.forEach((s) => {
+      if (s.department) unique.add(s.department);
+    });
+    return Array.from(unique).sort();
+  }, [students, yearFilter]);
+
+  // Students filtered by year and department for ranking
+  const filteredByYearDept = useMemo(() => {
+    return students.filter((s) => {
+      const matchesYear = yearFilter === 'All' || Number(s.year) === Number(yearFilter);
+      const matchesDept = deptFilter === 'All' || s.department === deptFilter;
+      return matchesYear && matchesDept;
+    });
+  }, [students, yearFilter, deptFilter]);
+
+  const rankedStudents = useMemo(() => {
+    const sorted = [...filteredByYearDept].sort((a, b) => (b.avgProgress || 0) - (a.avgProgress || 0));
+    const ordered = rankMode === 'least' ? [...sorted].reverse() : sorted;
+    return ordered.slice(0, limit);
+  }, [filteredByYearDept, rankMode, limit]);
+
+  const selectionAverage = useMemo(() => {
+    if (!filteredByYearDept.length) return 0;
+    const total = filteredByYearDept.reduce((acc, s) => acc + (s.avgProgress || 0), 0);
+    return Math.round(total / filteredByYearDept.length);
+  }, [filteredByYearDept]);
 
   // 3. Department Progress Distribution
   const deptProgressDistribution = useMemo(() => {
@@ -304,6 +366,141 @@ const AdminDashboard = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* YEAR & DEPARTMENT DEEP DIVE */}
+      <Paper sx={{ p: 3, borderRadius: 4, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>Year & Department Progress</Typography>
+            <Typography variant="body2" color="text.secondary">Filter by cohort and department, then toggle top vs least performers.</Typography>
+          </Box>
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Year</InputLabel>
+              <Select
+                label="Year"
+                value={yearFilter}
+                onChange={(e) => {
+                  setYearFilter(e.target.value);
+                  setDeptFilter('All');
+                }}
+              >
+                <MenuItem value="All">All Years</MenuItem>
+                {yearOptions.map((y) => (
+                  <MenuItem key={y} value={y}>{y} Year</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 180 }} disabled={!departmentOptions.length}>
+              <InputLabel>Department</InputLabel>
+              <Select
+                label="Department"
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+              >
+                <MenuItem value="All">All Departments</MenuItem>
+                {departmentOptions.map((d) => (
+                  <MenuItem key={d} value={d}>{d}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <ToggleButtonGroup
+              size="small"
+              value={rankMode}
+              exclusive
+              onChange={(_, v) => v && setRankMode(v)}
+            >
+              <ToggleButton value="top">Top</ToggleButton>
+              <ToggleButton value="least">Least</ToggleButton>
+            </ToggleButtonGroup>
+
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Show</InputLabel>
+              <Select
+                label="Show"
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+              >
+                {[5, 10, 15, 20].map((n) => (
+                  <MenuItem key={n} value={n}>{n} students</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                setYearFilter('All');
+                setDeptFilter('All');
+                setRankMode('top');
+                setLimit(10);
+              }}
+            >
+              Reset
+            </Button>
+          </Stack>
+        </Box>
+
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={4}>
+            <StatCard title="Students in View" value={filteredByYearDept.length} icon={<GroupIcon />} color="#02367B" />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <StatCard title="Average Progress" value={`${selectionAverage}%`} icon={<TrendingUpIcon />} color="#0496C7" />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <StatCard title="Mode" value={rankMode === 'top' ? 'Top performers' : 'Least performers'} icon={<AssignmentIcon />} color="#006CA5" />
+          </Grid>
+        </Grid>
+
+        <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.03)' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Student</TableCell>
+                <TableCell>Year</TableCell>
+                <TableCell>Department</TableCell>
+                <TableCell align="center">Progress</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rankedStudents.map((s) => (
+                <TableRow key={s._id} hover>
+                  <TableCell>
+                    <Typography fontWeight={700} variant="body2">{`${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Unknown'}</Typography>
+                    <Typography variant="caption" color="text.secondary">{s.email || 'N/A'}</Typography>
+                  </TableCell>
+                  <TableCell>{s.year || '-'}</TableCell>
+                  <TableCell>{s.department || '-'}</TableCell>
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                      <LinearProgress
+                        variant="determinate"
+                        value={s.avgProgress || 0}
+                        sx={{ width: 90, height: 8, borderRadius: 6 }}
+                        color={(s.avgProgress || 0) >= 75 ? 'success' : 'primary'}
+                      />
+                      <Typography variant="caption" fontWeight={700}>{Math.round(s.avgProgress || 0)}%</Typography>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {!rankedStudents.length && (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                    No students match the selected filters yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </Container>
   );
 };
