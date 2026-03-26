@@ -4,9 +4,6 @@ const User = require('../models/user.model');
 const { parseExcelFile } = require('../utils/excel');
 const fs = require('fs');
 
-/**
- * 🧠 Create a new course (Admin)
- */
 exports.createCourse = async (req, res) => {
     try {
         const {

@@ -195,7 +195,7 @@ const Dashboard = () => {
                   <Typography variant="h5" sx={{ fontWeight: 700, color: "#0D47A1" }}>
                     📚 Your Courses
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: "#2311c5", mt: 0.5 }}>
                     {courses.length} course{courses.length !== 1 ? "s" : ""} available
                   </Typography>
                 </Box>
@@ -222,7 +222,7 @@ const Dashboard = () => {
                 </Grid>
               ) : (
                 <Card sx={{ textAlign: "center", py: 8, borderRadius: 2 }}>
-                  <Typography variant="h6" sx={{ color: "#999" }}>
+                  <Typography variant="h6" sx={{ color: "#1520b4" }}>
                     No courses enrolled yet
                   </Typography>
                   <Button

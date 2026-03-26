@@ -16,40 +16,37 @@ function App() {
   const { token, user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
 
-  if (!token) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
   return (
     <ThemeContextProvider>
       <BrowserRouter>
         <Routes>
-          <Route element={<Layout />}>
-            {isAdmin ? (
-              <>
-                <Route path="/" element={<AdminDashboard />} />
-                <Route path="/students" element={<AdminStudents />} />
-                <Route path="/courses" element={<AdminCourses />} />
-              </>
-            ) : (
-              <>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/courses" element={<Courses />} />
-                <Route path="/courses/:id" element={<CoursePage />} />
-                <Route path="/profile" element={<Profile />} />
-              </>
-            )}
-            
-            <Route path="/messages" element={<Messages />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
+          {!token ? (
+            <>
+              <Route path="/login" element={<Login />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </>
+          ) : (
+            <>
+              <Route element={<Layout />}>
+                {isAdmin ? (
+                  <>
+                    <Route path="/" element={<AdminDashboard />} />
+                    <Route path="/students" element={<AdminStudents />} />
+                    <Route path="/courses" element={<AdminCourses />} />
+                  </>
+                ) : (
+                  <>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/courses" element={<Courses />} />
+                    <Route path="/courses/:id" element={<CoursePage />} />
+                    <Route path="/profile" element={<Profile />} />
+                  </>
+                )}
+                <Route path="/messages" element={<Messages />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </>
+          )}
         </Routes>
       </BrowserRouter>
     </ThemeContextProvider>

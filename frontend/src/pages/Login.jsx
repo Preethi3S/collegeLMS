@@ -1,17 +1,19 @@
 import logo from '@/assets/logo.png';
 import useAuthStore from '@/context/auth.store';
 import api from '@/services/api';
-import { Box, Button, TextField, Typography } from '@mui/material';
-import React from 'react';
+import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
+  const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors }, setError } = useForm();
 
   const onSubmit = async (data) => {
+    setLoading(true);
     try {
       const response = await api.post('/auth/login', data);
       const { token, user } = response.data;
@@ -21,6 +23,8 @@ const Login = () => {
       setError('root', {
         message: error.response?.data?.message || 'An error occurred during login'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,6 +99,7 @@ const Login = () => {
                 opacity: 0.7,
               },
             }}
+            disabled={loading}
           />
 
           <TextField
@@ -121,6 +126,7 @@ const Login = () => {
                 opacity: 0.7,
               },
             }}
+            disabled={loading}
           />
 
           {errors.root && (
@@ -138,6 +144,7 @@ const Login = () => {
             variant="contained"
             size="large"
             type="submit"
+            disabled={loading}
             sx={{
               mt: 3,
               backgroundColor: '#1B5E8E',
@@ -152,7 +159,7 @@ const Login = () => {
               },
             }}
           >
-            Sign In
+            {loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Sign In'}
           </Button>
         </form>
 

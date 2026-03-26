@@ -36,7 +36,7 @@ const Courses = () => {
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h2" sx={{ fontWeight: 600, color: '#1A1A1A', mb: 0.5 }}>
+        <Typography variant="h2" sx={{ fontWeight: 600, color: '#141edf', mb: 0.5 }}>
           Available Courses
         </Typography>
         <Typography variant="body1" sx={{ color: '#6B7280' }}>
